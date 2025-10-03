@@ -18,7 +18,7 @@ public class Hitbox : MonoBehaviour
         Hurtbox hurtbox = other.GetComponent<Hurtbox>();
         if (hurtbox != null && hurtbox.owner != owner)
         {
-            owner.DealDamage(hurtbox.owner);
+            owner.TargetHit(hurtbox.owner);
         }
     }
 
@@ -27,7 +27,7 @@ public class Hitbox : MonoBehaviour
         Hurtbox hurtbox = other.GetComponent<Hurtbox>();
         if (hurtbox != null && hurtbox.owner != owner)
         {
-            owner.DealDamage(hurtbox.owner);
+            owner.TargetHit(hurtbox.owner);
         }
     }
 }
