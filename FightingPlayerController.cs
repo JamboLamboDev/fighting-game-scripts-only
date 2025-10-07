@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
-public abstract class FightingPlayerController : MonoBehaviour
+public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 {
     FightingPlayerController opponent;  //find in start, used to face
     public Collider[] hitboxes; // array of hitbox colliders
@@ -46,6 +46,7 @@ public abstract class FightingPlayerController : MonoBehaviour
     public string currentAttackProperty2;
     public float currentAttackKnockbackForce;
     public float currentAttackBlockStunDuration;
+    public float AttackReward; //bonus spe meter for hitting.
     public bool isGuardBreakAttacking;
     public bool FacingRight = true;
     public ValBar healthBar;
@@ -583,14 +584,31 @@ public abstract class FightingPlayerController : MonoBehaviour
         //GuardBreakHit will be called by opponent if it hits
     }
 
+    [PunRPC]
+    public void RPC_SetStun(float stun)
+    {
+        stunTimer = stun;
+    }
+
+    [PunRPC]
+    public void RPC_Destroy()
+    {
+        if (photonView.IsMine)
+        {
+            PhotonNetwork.Destroy(this.gameObject);
+        }
+    }
+
     public void TargetHit(FightingPlayerController target) // called by hitbox when it collides with opponent
     {
         Debug.Log("Hit registered on " + target.name);
 
         if (isInAttack && target != null) //can only hit once per attack and verify target exists
         {
+            specialMeter += AttackReward;//bonus special meter from attack.
+            specialBar.SetVal(specialMeter);
             isInAttack = false; // reset attack state so can only hit once
-            target.photonView.RPC("RPC_TakeDamage",RpcTarget.All,currentAttackDamage, currentAttackStun, currentAttackProperty, currentAttackProperty2, currentAttackKnockbackForce, currentAttackBlockStunDuration);
+            target.photonView.RPC("RPC_TakeDamage", RpcTarget.All, currentAttackDamage, currentAttackStun, currentAttackProperty, currentAttackProperty2, currentAttackKnockbackForce, currentAttackBlockStunDuration);
             //insert hit sound/visual effects
             DisableAllHitboxes(); // disable hitboxes after hit
         }
@@ -635,9 +653,12 @@ public abstract class FightingPlayerController : MonoBehaviour
         healthBar.SetMaxValue(maxHealth);
         blockBar.SetMaxValue(maxBlockMeter);
         specialBar.SetMaxValue(maxSpecialMeter);
+        healthBar.SetVal(health);
+        blockBar.SetVal(blockMeter);
+        specialBar.SetVal(specialMeter);
     }
     
-    private void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info) //network functionality
+    public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info) //network functionality
 {
         if (stream.IsWriting)
         {
@@ -658,6 +679,7 @@ public abstract class FightingPlayerController : MonoBehaviour
             this.isBlocking = (bool)stream.ReceiveNext();
             this.isCrouched = (bool)stream.ReceiveNext();
             this.stunTimer = (float)stream.ReceiveNext();
+
             if (healthBar != null) healthBar.SetVal(this.health);
             if (blockBar != null) blockBar.SetVal(this.blockMeter);
             if (specialBar != null) specialBar.SetVal(this.specialMeter);

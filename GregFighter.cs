@@ -1,8 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
-public class GregFighter : FightingPlayerController //inherits from FightingPlayerController, to make a specific character
+using Photon.Pun;
+using Photon.Realtime;
+public class GregFighter : FightingPlayerController,IPunObservable //inherits from FightingPlayerController, to make a specific character
 {
     void Awake() //set character specific stats
     {
@@ -22,7 +23,7 @@ public class GregFighter : FightingPlayerController //inherits from FightingPlay
         
     }
 
-// ---ATTACKS--- \\
+    // ---ATTACKS--- \\
     public override void NeutralLightAttack() //data for attack
     {
         isInAttack = true;
@@ -33,6 +34,7 @@ public class GregFighter : FightingPlayerController //inherits from FightingPlay
         currentAttackKnockbackForce = 5f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.2f;
+        AttackReward = 4f;
 
 
     }
@@ -40,92 +42,97 @@ public class GregFighter : FightingPlayerController //inherits from FightingPlay
     {
         isInAttack = true;
         currentAttackDamage = 10f;
-        currentAttackStun = 1f;
+        currentAttackStun = 1.2f;
         currentAttackProperty = "n/a";
         currentAttackProperty2 = "n/a";
         currentAttackKnockbackForce = 5f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.5f;
+        AttackReward = 6f;
     }
     public override void NeutralSpecialAttack()
     {
 
         isInAttack = true;
-        currentAttackDamage = 10f;
-        currentAttackStun = 1f;
+        currentAttackDamage = 25f;
+        currentAttackStun = 3f;
         currentAttackProperty = "n/a";
         currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 5f;
+        currentAttackKnockbackForce = 2f;
         currentAttackBlockStunDuration = 0.5f;
-        stunTimer = 0.5f;
+        stunTimer = 1f;
+        AttackReward = 10f;
         
     }
     public override void CrouchedLightAttack()
     {
         isInAttack = true;
         currentAttackDamage = 10f;
-        currentAttackStun = 1f;
-        currentAttackProperty = "n/a";
+        currentAttackStun = 2f;
+        currentAttackProperty = "launch";
         currentAttackProperty2 = "n/a";
         currentAttackKnockbackForce = 5f;
         currentAttackBlockStunDuration = 0.5f;
-        stunTimer = 0.5f;
+        stunTimer = 1.5f;
+        AttackReward = 8f;
         
     }
     public override void CrouchedHeavyAttack()
     {
         isInAttack = true;
-        currentAttackDamage = 10f;
-        currentAttackStun = 1f;
-        currentAttackProperty = "n/a";
+        currentAttackDamage = 15f;
+        currentAttackStun = 3.5f;
+        currentAttackProperty = "low";
         currentAttackProperty2 = "n/a";
         currentAttackKnockbackForce = 5f;
-        currentAttackBlockStunDuration = 0.5f;
-        stunTimer = 0.5f;
+        currentAttackBlockStunDuration = 1.5f;
+        stunTimer = 2.5f;
+        AttackReward = 6f;
     }
     public override void CrouchedSpecialAttack()
     {
         isInAttack = true;
         currentAttackDamage = 10f;
-        currentAttackStun = 1f;
-        currentAttackProperty = "n/a";
-        currentAttackProperty2 = "n/a";
+        currentAttackStun = 6f;
+        currentAttackProperty = "knockdown";
+        currentAttackProperty2 = "low";
         currentAttackKnockbackForce = 5f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.5f;
+        AttackReward = 4f;
     }
     public override void AerialLightAttack()
     {
         isInAttack = true;
         currentAttackDamage = 10f;
-        currentAttackStun = 1f;
-        currentAttackProperty = "n/a";
+        currentAttackStun = 3f;
+        currentAttackProperty = "high";
         currentAttackProperty2 = "n/a";
         currentAttackKnockbackForce = 5f;
         currentAttackBlockStunDuration = 0.5f;
-        stunTimer = 0.5f;
+        stunTimer = 1f;
     }
     public override void AerialHeavyAttack()
     {
         isInAttack = true;
-        currentAttackDamage = 10f;
+        currentAttackDamage = 20f;
         currentAttackStun = 1f;
-        currentAttackProperty = "n/a";
+        currentAttackProperty = "high";
         currentAttackProperty2 = "n/a";
         currentAttackKnockbackForce = 5f;
         currentAttackBlockStunDuration = 0.5f;
-        stunTimer = 0.5f;
+        stunTimer = 1.5f;
     }
     public override void AerialSpecialAttack()
     {
         isInAttack = true;
         currentAttackDamage = 10f;
-        currentAttackStun = 1f;
-        currentAttackProperty = "n/a";
+        currentAttackStun = 5f;
+        currentAttackProperty = "air";
         currentAttackProperty2 = "n/a";
         currentAttackKnockbackForce = 5f;
-        currentAttackBlockStunDuration = 0.5f;
-        stunTimer = 0.5f;
+        currentAttackBlockStunDuration = 3f;
+        stunTimer = 3f;
     }
     public override void ForwardLightAttack()
     {
@@ -142,9 +149,9 @@ public class GregFighter : FightingPlayerController //inherits from FightingPlay
     {
         isInAttack = true;
         currentAttackDamage = 20f;
-        currentAttackStun = 1f;
+        currentAttackStun = 6f;
         currentAttackProperty = "high"; //overhead attack
-        currentAttackProperty2 = "HardKnockdown";
+        currentAttackProperty2 = "knockdown";
         currentAttackKnockbackForce = 5f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 1.5f;
