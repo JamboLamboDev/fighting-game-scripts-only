@@ -25,21 +25,41 @@ public class FightingGameMode : MonoBehaviour
     public ValBar P1HPBar;
     public ValBar P2HPBar;
     public ValBar P1GuardBar;
-    
+
     public ValBar P2GuardBar;
-    
+
     public ValBar P1SpeBar;
-    
+
     public ValBar P2SpeBar;
     public GameObject P1 = null;
     public GameObject P2 = null;
-    
-    
+    public PhotonView photonView; //owner is host
+    public Player player1Ref;
+    public Player player2Ref;
+
+
 
 
     void Start()
     {
+        photonView = GetComponent<PhotonView>();
+        player1Ref = PhotonNetwork.MasterClient;
         StartCoroutine(GameLoop());
+        
+    }
+
+    [PunRPC]
+    void RPC_UpdateRoundText(string text)
+    {
+        roundText.text = text;
+    }
+
+    
+
+    [PunRPC]
+    void RPC_UpdateTimerText(string text)
+    {
+        timerText.text = text;
     }
 
     IEnumerator GameLoop()
@@ -48,92 +68,107 @@ public class FightingGameMode : MonoBehaviour
         yield return StartCoroutine(RoundActive());
         yield return StartCoroutine(RoundEnd());
     }
-
+    
     IEnumerator RoundStart()
     {
-        // Spawn players fresh each round
-        if (player1 != null && PhotonNetwork.IsMasterClient)
+        if (PhotonNetwork.IsMasterClient)
         {
-            PhotonNetwork.Destroy(player1.gameObject);
+            if (player1 != null)
+            {
+                Debug.Log("Tried to destroy");
+                player1.photonView.RPC("RPC_Destroy", RpcTarget.All);
+            }
+
+            if (player2 != null)
+            {
+                player2.photonView.RPC("RPC_Destroy", RpcTarget.All);
+            }
+
+            yield return new WaitForSeconds(0.5f); //WAIT FOR PLAYERS TO ALL JOIN
+            player2Ref = PhotonNetwork.PlayerListOthers[0];
+
+            if (PhotonNetwork.IsMasterClient)
+            {
+                P1 = PhotonNetwork.Instantiate("Characters/GregPlayable", player1Spawn.position, player1Spawn.rotation);
+                P2 = PhotonNetwork.Instantiate("Characters/GregPlayable", player2Spawn.position, player2Spawn.rotation);
+            }
+
+
+            // Wait for both players to be instantiated
+            yield return new WaitUntil(() => GameObject.FindGameObjectsWithTag("Player").Length == 2);
+            player1 = P1.GetComponent<FightingPlayerController>();
+            player2 = P2.GetComponent<FightingPlayerController>();
+            player1.photonView.TransferOwnership(player1Ref);
+            player2.photonView.TransferOwnership(player2Ref);
+
+
+            if (P1 != null)
+            {
+                int player1mask = LayerMask.NameToLayer("Player1");
+                player1 = P1.GetComponent<FightingPlayerController>();
+                player1.photonView.RPC("RPC_Spawn", RpcTarget.All, player1mask);
+            }
+
+            if (P2 != null)
+            {
+                player2 = P2.GetComponent<FightingPlayerController>();
+                int player2mask = LayerMask.NameToLayer("Player2");
+                player2.photonView.RPC("RPC_Spawn", RpcTarget.All, player2mask);
+
+            }
         }
 
-        if (player2 != null && PhotonNetwork.IsMasterClient)
+        if (!PhotonNetwork.IsMasterClient) //player 2 needs to figure out which player is whch
         {
-            PhotonNetwork.Destroy(player2.gameObject);
+            var players = GameObject.FindGameObjectsWithTag("Player");
+            foreach (var p in players)
+            {
+                var pv = p.GetComponent<PhotonView>();
+                if (pv.Owner.IsLocal)
+                    player2 = p.GetComponent<FightingPlayerController>();
+                else
+                    player1 = p.GetComponent<FightingPlayerController>();
+            }
         }
+
+        player1.SetBars(P1HPBar, P1GuardBar, P1SpeBar); 
+        player2.SetBars(P2HPBar, P2GuardBar, P2SpeBar);
 
         if (PhotonNetwork.IsMasterClient)
         {
-             P1 = PhotonNetwork.Instantiate("Characters/GregPlayable", player1Spawn.position, player1Spawn.rotation);
+            photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "3");
+            yield return new WaitForSeconds(1f);
+            photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "2");
+            yield return new WaitForSeconds(1f);
+            photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "1");
+            yield return new WaitForSeconds(1f);
+            player1.photonView.RPC("RPC_SetStun", player1.photonView.Owner, 0f);
+            player2.photonView.RPC("RPC_SetStun", player2.photonView.Owner, 0f);
+
+            photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "Match Start!");
+            currentTime = roundTime;
+            yield return new WaitForSeconds(2f);
+
+            photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "");
+            roundActive = true;
         }
-        else
-        {
-             P2 = PhotonNetwork.Instantiate("Characters/GregPlayable", player2Spawn.position, player2Spawn.rotation);
-        }
-        
-
-        // Wait for both players to be instantiated
-        yield return new WaitUntil(() => GameObject.FindGameObjectsWithTag("Player").Length == 2);
-
-        // Find players by tag or other identifier
-        var players = GameObject.FindGameObjectsWithTag("Player");
-        foreach (var player in players)
-        {
-            var photonView = player.GetComponent<PhotonView>();
-            if (photonView.Owner.IsMasterClient)
-            {
-                P1 = player;
-                player1 = P1.GetComponent<FightingPlayerController>();
-            }
-            else
-            {
-                P2 = player;
-                player2 = P2.GetComponent<FightingPlayerController>();
-            }
-        }
-                
-        
-        if (P1 != null && P1.GetComponent<PhotonView>().IsMine)
-        {
-            int player1mask = LayerMask.NameToLayer("Player1");
-            player1 = P1.GetComponent<FightingPlayerController>();
-            player1.photonView.RPC("RPC_Spawn", RpcTarget.All, player1mask);
-        }
-        if (P2 != null && P2.GetComponent<PhotonView>().IsMine)
-        {
-            player2 = P2.GetComponent<FightingPlayerController>();
-            int player2mask = LayerMask.NameToLayer("Player2");
-            player2.photonView.RPC("RPC_Spawn", RpcTarget.All, player2mask);
-            
-        }
-
-        player1.SetBars(P1HPBar, P1GuardBar, P1SpeBar);
-        player2.SetBars(P2HPBar, P2GuardBar, P2SpeBar);
-  
-        roundText.text = "3";
-        yield return new WaitForSeconds(1f);
-        roundText.text = "2";
-        yield return new WaitForSeconds(1f);
-        roundText.text = "1";
-        yield return new WaitForSeconds(1f);
-        player1.stunTimer = 0f;
-        player2.stunTimer = 0f;
-
-
-        roundText.text = "Round Start!";
-        currentTime = roundTime;
-        yield return new WaitForSeconds(2f);
-
-        roundText.text = "";
-        roundActive = true;
     }
 
-    IEnumerator RoundActive()
+    IEnumerator RoundActive() //only host gets access
     {
+        float secondPassed = 0f; //otherwise rpc timer text updated too often.
         while (roundActive)
         {
             currentTime -= Time.deltaTime;
-            timerText.text = Mathf.Ceil(currentTime).ToString();
+            secondPassed += Time.deltaTime;
+            if (secondPassed >= 1f)//time the timer.
+            {
+                string StringCurrentTime = Mathf.Ceil(currentTime).ToString();
+                photonView.RPC("RPC_UpdateTimerText", RpcTarget.All, StringCurrentTime);
+                secondPassed = 0f;
+            }
+
+ 
 
             if (player1.health <= 0 || player2.health <= 0 || currentTime <= 0)
             {
@@ -146,45 +181,47 @@ public class FightingGameMode : MonoBehaviour
 
     IEnumerator RoundEnd()
     {
-        if (player1.health <= 0 && player2.health <= 0)
-        {
-            
-            player1.photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"KO");
-            player2.photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"KO");
-            roundText.text = "Double KO!";
-        }
-        else if (player1.health <= 0)
-        {
-            player1.photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"KO");
-            player2.photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"Victory");
-            roundText.text = "Player 2 Wins!";
-            p2Wins++;
-        }
-        else if (player2.health <= 0)
-        {
-            player2.photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"KO");
-            player1.photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"Victory");
-            roundText.text = "Player 1 Wins!";
-            p1Wins++;
-        }
-        else
-        {
-
-            if (player1.health > player2.health)
+        if (PhotonNetwork.IsMasterClient){
+            if (player1.health <= 0 && player2.health <= 0)
             {
-                player2.photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"Defeated");
-                player1.photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"Victory");
-                roundText.text = "Player 1 Wins!";
+
+                player1.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "KO");
+                player2.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "KO");
+                photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "Double KO!");
+            }
+            else if (player1.health <= 0)
+            {
+                player1.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "KO");
+                player2.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Victory");
+                photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "Player 2 Wins!");
+                p2Wins++;
+            }
+            else if (player2.health <= 0)
+            {
+                player2.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "KO");
+                player1.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Victory");
+                photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "Player 1 Wins!");
                 p1Wins++;
-                
-                
             }
             else
             {
-                player1.photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"Defeated");
-                player2.photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"Victory");
-                roundText.text = "Player 2 Wins!";
-                p2Wins++;
+
+                if (player1.health > player2.health)
+                {
+                    player2.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Defeated");
+                    player1.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Victory");
+                    photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "Player 1 Wins!");
+                    p1Wins++;
+
+
+                }
+                else
+                {
+                    player1.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Defeated");
+                    player2.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Victory");
+                    photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "Player 2 Wins!"); ;
+                    p2Wins++;
+                }
             }
         }
 
@@ -197,12 +234,9 @@ public class FightingGameMode : MonoBehaviour
         }
         else
         {
-            if (PhotonNetwork.IsMasterClient)
-            {
-                 StartCoroutine(GameLoop());
-            }
-
-
+            StartCoroutine(GameLoop());
         }
     }
+    
+    
 }

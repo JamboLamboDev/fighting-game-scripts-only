@@ -7,12 +7,16 @@ public class PhotonMenuManager : MonoBehaviourPunCallbacks
 {
     void Start()
     {
+        PhotonNetwork.SendRate = 60;
+        PhotonNetwork.SerializationRate = 30;
+
         // Connect to Photon cloud
         if (!PhotonNetwork.IsConnected)
         {
             PhotonNetwork.AutomaticallySyncScene = true;
             PhotonNetwork.ConnectUsingSettings();
             Debug.Log("Connecting to Photon...");
+            
         }
     }
 
