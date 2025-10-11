@@ -49,6 +49,8 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public float AttackReward; //bonus spe meter for hitting.
     public bool isGuardBreakAttacking;
     public bool FacingRight = true;
+    public bool isInCounter = false;
+    public bool notCancellable; //for attacks to cancel early.
     public ValBar healthBar;
     public ValBar blockBar;
     public ValBar specialBar;
@@ -112,6 +114,9 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             if (stunTimer > 0) //can't do anything if stunned
             {
                 stunTimer -= Time.deltaTime;
+            }
+            else if (notCancellable) { //can't do other inputs while attacking
+                return;
             }
             else
             {
@@ -264,9 +269,16 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     }
     public void TakeDamage(float damage, float stunDuration, string attackProperty, string attackProperty2, float knockbackForce, float blockStunDuration) //called by attacker when attack hitbox connects
     {
+        if (isInCounter)
+        {
+            isInCounter = false;
+            CounterSuccess();
+            return;
+        }
         if (isInAttack) // if hit during own attack, it's a counter hit
         {
             isInAttack = false; // cancel attack if hit
+            notCancellable = false; //animation cancel
             damage *= 1.4f; // take extra damage when counter hit
             stunDuration *= 1.4f;
             //play counter hit sound/animation
@@ -575,12 +587,13 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public abstract void AerialSpecialAttack();
     public abstract void ForwardLightAttack();
     public abstract void ForwardHeavyAttack();
+    public abstract void CounterSuccess(); //set to return if no counter i kit
     public abstract void GuardBreakSuccess(FightingPlayerController target); //called when guard break attack hits
     public void GuardBreak()
     { //attack that stuns opponent and breaks guard meter
         isGuardBreakAttacking = true;
         photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"GuardBreakAttack");
-        stunTimer = 3f; //framedata
+        stunTimer = 6f; //framedata
         //GuardBreakHit will be called by opponent if it hits
     }
 
@@ -608,6 +621,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             specialMeter += AttackReward;//bonus special meter from attack.
             specialBar.SetVal(specialMeter);
             isInAttack = false; // reset attack state so can only hit once
+            notCancellable = false; //animation cancel
             target.photonView.RPC("RPC_TakeDamage", RpcTarget.All, currentAttackDamage, currentAttackStun, currentAttackProperty, currentAttackProperty2, currentAttackKnockbackForce, currentAttackBlockStunDuration);
             //insert hit sound/visual effects
             DisableAllHitboxes(); // disable hitboxes after hit
@@ -640,9 +654,15 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public void EndAttack() // called at end of attack animation to reset attack state
     {
         isInAttack = false;
+        isInCounter = false;
+        notCancellable = false;
         DisableAllHitboxes();
         EnableAllHurtboxes();
         Debug.Log("Attack ended");
+    }
+
+    public void counterStart(){//in animation controller
+        isInCounter = true;
     }
 
     public void SetBars(ValBar hp, ValBar block, ValBar spe) //set bars from gamemode.
@@ -656,6 +676,11 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         healthBar.SetVal(health);
         blockBar.SetVal(blockMeter);
         specialBar.SetVal(specialMeter);
+    }
+    
+    public void CancellableMove() //moves that can be cancellable midway through
+    {
+        notCancellable = false; //animation cancel
     }
     
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info) //network functionality

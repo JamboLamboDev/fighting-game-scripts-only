@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
+using ExitGames.Client.Photon;
 using Photon.Realtime;
 
 

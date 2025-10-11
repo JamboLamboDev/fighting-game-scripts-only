@@ -18,7 +18,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         specialMeter = 0f;
         crouchedSpecialCost = 20f;
         aerialSpecialCost = 40f;
-        neutralSpecialCost = 60f;
+        neutralSpecialCost = 40f;
         stunTimer = 0.5f; //locks player into attack
         
     }
@@ -27,6 +27,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     public override void NeutralLightAttack() //data for attack
     {
         isInAttack = true;
+        notCancellable = true;
         currentAttackDamage = 5f;
         currentAttackStun = 1f;
         currentAttackProperty = "n/a";
@@ -41,6 +42,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     public override void NeutralHeavyAttack()
     {
         isInAttack = true;
+        notCancellable = true;
         currentAttackDamage = 10f;
         currentAttackStun = 1.2f;
         currentAttackProperty = "n/a";
@@ -54,19 +56,14 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     {
 
         isInAttack = true;
-        currentAttackDamage = 25f;
-        currentAttackStun = 3f;
-        currentAttackProperty = "n/a";
-        currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 2f;
-        currentAttackBlockStunDuration = 0.5f;
+        notCancellable = true;
         stunTimer = 1f;
-        AttackReward = 10f;
         
     }
     public override void CrouchedLightAttack()
     {
         isInAttack = true;
+        notCancellable = true;
         currentAttackDamage = 10f;
         currentAttackStun = 2f;
         currentAttackProperty = "launch";
@@ -80,6 +77,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     public override void CrouchedHeavyAttack()
     {
         isInAttack = true;
+        notCancellable = true;
         currentAttackDamage = 15f;
         currentAttackStun = 3.5f;
         currentAttackProperty = "low";
@@ -92,6 +90,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     public override void CrouchedSpecialAttack()
     {
         isInAttack = true;
+        notCancellable = true;
         currentAttackDamage = 10f;
         currentAttackStun = 6f;
         currentAttackProperty = "knockdown";
@@ -104,6 +103,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     public override void AerialLightAttack()
     {
         isInAttack = true;
+        notCancellable = true;
         currentAttackDamage = 10f;
         currentAttackStun = 3f;
         currentAttackProperty = "high";
@@ -115,6 +115,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     public override void AerialHeavyAttack()
     {
         isInAttack = true;
+        notCancellable = true;
         currentAttackDamage = 20f;
         currentAttackStun = 1f;
         currentAttackProperty = "high";
@@ -137,6 +138,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     public override void ForwardLightAttack()
     {
         isInAttack = true;
+        notCancellable = true;
         currentAttackDamage = 5f;
         currentAttackStun = 1f;
         currentAttackProperty = "n/a";
@@ -148,6 +150,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     public override void ForwardHeavyAttack()
     {
         isInAttack = true;
+        notCancellable = true;
         currentAttackDamage = 20f;
         currentAttackStun = 6f;
         currentAttackProperty = "high"; //overhead attack
@@ -160,6 +163,20 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     public override void GuardBreakSuccess(FightingPlayerController target) //unfinished
     {
         return;
+    }
+
+    public override void CounterSuccess()
+    {
+        photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Counter");
+        isInAttack = true;
+        notCancellable = true;
+        currentAttackDamage = 40f;
+        currentAttackStun = 6f;
+        currentAttackProperty = "unblockable";
+        currentAttackProperty2 = "knockdown";
+        currentAttackKnockbackForce = 10f;
+        currentAttackBlockStunDuration = 0.5f;
+        
     }
 
 }
