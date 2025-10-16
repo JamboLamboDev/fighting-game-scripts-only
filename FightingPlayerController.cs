@@ -54,9 +54,8 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public ValBar healthBar;
     public ValBar blockBar;
     public ValBar specialBar;
+    public BlockSFX blockEffect; // block effect.
     public PhotonView photonView; // to identify owner.
-
-
 
     // Start is called before the first frame update
 
@@ -68,6 +67,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         animator = GetComponent<Animator>();
         stunTimer = 100f; // stunned until match starts.
         animator.SetBool("isGrounded", true);
+        blockEffect = GetComponentInChildren<BlockSFX>();
     }
 
     [PunRPC]
@@ -295,6 +295,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 
             if (isBlocking && blockMeter > 0)
             {
+                blockEffect.photonView.RPC("RPC_Appear", RpcTarget.All);
                 lastBlockTime = Time.time; // reset last block time for regen delay
 
                 float reducedDamage = damage * 0.1f;
