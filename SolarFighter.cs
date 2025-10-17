@@ -27,7 +27,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
     public override void NeutralLightAttack() //data for attack
     {
         isInAttack = true;
-        notCancellable = true;
+        notCancellable = false;
         currentAttackDamage = 5f;
         currentAttackStun = 1f;
         currentAttackProperty = "n/a";
@@ -63,7 +63,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
     public override void CrouchedLightAttack()
     {
         isInAttack = true;
-        notCancellable = true;
+        notCancellable = false;
         currentAttackDamage = 10f;
         currentAttackStun = 2f;
         currentAttackProperty = "launch";
@@ -77,7 +77,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
     public override void CrouchedHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = true;
+        notCancellable = false;
         currentAttackDamage = 15f;
         currentAttackStun = 3.5f;
         currentAttackProperty = "low";
