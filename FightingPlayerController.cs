@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
+
 public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 {
     FightingPlayerController opponent;  //find in start, used to face
@@ -56,6 +57,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public ValBar specialBar;
     public BlockSFX blockEffect; // block effect.
     public PhotonView photonView; // to identify owner.
+    private Coroutine doKnockback; // called when taking damage to execute knockback 
 
     // Start is called before the first frame update
 
@@ -111,12 +113,9 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         else
         {
             updateChecks();// hitboxes,facing opponent, block, etc
-            if (stunTimer > 0) //can't do anything if stunned
+            if (stunTimer > 0 && !notCancellable) //can't do anything if stunned and current state isnt cancellable
             {
                 stunTimer -= Time.deltaTime;
-            }
-            else if (notCancellable) { //can't do other inputs while attacking
-                return;
             }
             else
             {
@@ -302,6 +301,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                 health -= reducedDamage;
                 blockMeter -= damage; // Block meter depletes based on damage taken
                 specialMeter += damage * 0.2f;
+                TakeKnockback(knockbackForce*0.65f, false);//less knockback on block
 
                 //insert logic for block timer regen
 
@@ -335,19 +335,22 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                 health -= damage * damageScale;
                 stunTimer = stunDuration * stunScale;
                 specialMeter += damage * 0.5f; // gain special meter when taking damage
-                photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"Damaged");;
 
                 if (attackProperty == "launch" || attackProperty2 == "launch")
                 {
-                    // Apply launch effect
-                    //laucnhc effect logic here
-                    photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"Launched");; // Play launched animation
+                    photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Launched"); ; // Play launched animation
+                    TakeKnockback(knockbackForce, true);
                 }
                 else if (attackProperty == "knockdown" || attackProperty2 == "knockdown")
                 {
                     isKnockedDown = true;
-                    photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"HardKnockdown"); // Play knockdown animation
+                    photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "HardKnockdown"); // Play knockdown animation
 
+                }
+                else
+                {
+                    photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"Damaged"); ;
+                    TakeKnockback(knockbackForce, false);
                 }
 
             }
@@ -360,6 +363,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     [PunRPC]
     public void RPC_TakeDamage(float damage, float stunDuration, string attackProperty, string attackProperty2, float knockbackForce, float blockStunDuration) //called by attacker when attack hitbox connects
     {
+        if (!photonView.IsMine) return;
         TakeDamage(damage, stunDuration, attackProperty, attackProperty2, knockbackForce, blockStunDuration);
     }
     public bool blockSuccess(string attackProperty, string attackProperty2) //check if block is unsuccessful
@@ -623,7 +627,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             specialBar.SetVal(specialMeter);
             isInAttack = false; // reset attack state so can only hit once
             notCancellable = false; //animation cancel
-            target.photonView.RPC("RPC_TakeDamage", RpcTarget.All, currentAttackDamage, currentAttackStun, currentAttackProperty, currentAttackProperty2, currentAttackKnockbackForce, currentAttackBlockStunDuration);
+            target.photonView.RPC("RPC_TakeDamage",target.photonView.Owner, currentAttackDamage, currentAttackStun, currentAttackProperty, currentAttackProperty2, currentAttackKnockbackForce, currentAttackBlockStunDuration);
             //insert hit sound/visual effects
             DisableAllHitboxes(); // disable hitboxes after hit
         }
@@ -662,8 +666,56 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         Debug.Log("Attack ended");
     }
 
-    public void counterStart(){//in animation controller
+    public void counterStart()
+    {//in animation controller
         isInCounter = true;
+    }
+
+
+    public void TakeKnockback(float knockbackForce, bool isLaunch) //called by take damage
+    {
+        float verticalForce = 0f;
+        if (doKnockback != null)
+        {
+            StopCoroutine(doKnockback);
+        }
+        if (isLaunch)
+        {
+            verticalForce = 7f;
+        }
+        float directionMult;
+
+        if (FacingRight) //uses our knockback direction to know which direction to be knocked back and multiplies it to knockback correct directions
+        {
+            directionMult = -1f;  // player is facing right
+        }
+        else
+        {
+            directionMult = 1f; // player is facing left
+        }
+        Vector3 knockbackVector = new Vector3(directionMult * knockbackForce, verticalForce, 0f);
+        doKnockback = StartCoroutine(KnockbackMovement(knockbackVector));
+    }
+    
+    private IEnumerator KnockbackMovement(Vector3 velocity)
+    {
+        float duration = 0.2f; // how long knockback lasts
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            characterController.Move(velocity * Time.deltaTime);
+
+            if (velocity.y > 0f)
+            {
+                velocity.y += Physics.gravity.y * gravityScale * Time.deltaTime;
+            }
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        doKnockback = null;
     }
 
     public void SetBars(ValBar hp, ValBar block, ValBar spe) //set bars from gamemode.

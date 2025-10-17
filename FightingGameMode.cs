@@ -10,8 +10,7 @@ using Photon.Realtime;
 
 public class FightingGameMode : MonoBehaviour
 {
-    public FightingPlayerController player1Prefab;
-    public FightingPlayerController player2Prefab;
+
     public Transform player1Spawn;
     public Transform player2Spawn;
     private FightingPlayerController player1;
@@ -88,10 +87,14 @@ public class FightingGameMode : MonoBehaviour
             yield return new WaitForSeconds(0.5f); //WAIT FOR PLAYERS TO ALL JOIN
             player2Ref = PhotonNetwork.PlayerListOthers[0];
 
+
+
             if (PhotonNetwork.IsMasterClient)
             {
-                P1 = PhotonNetwork.Instantiate("Characters/GregPlayable", player1Spawn.position, player1Spawn.rotation);
-                P2 = PhotonNetwork.Instantiate("Characters/GregPlayable", player2Spawn.position, player2Spawn.rotation);
+                string P1Char = GetCharacterChosen(player1Ref);
+                string P2Char = GetCharacterChosen(player2Ref);
+                P1 = PhotonNetwork.Instantiate(P1Char, player1Spawn.position, player1Spawn.rotation);
+                P2 = PhotonNetwork.Instantiate(P2Char, player2Spawn.position, player2Spawn.rotation);
             }
 
 
@@ -182,7 +185,8 @@ public class FightingGameMode : MonoBehaviour
 
     IEnumerator RoundEnd()
     {
-        if (PhotonNetwork.IsMasterClient){
+        if (PhotonNetwork.IsMasterClient)
+        {
             if (player1.health <= 0 && player2.health <= 0)
             {
 
@@ -238,6 +242,19 @@ public class FightingGameMode : MonoBehaviour
             StartCoroutine(GameLoop());
         }
     }
-    
-    
+
+    private string GetCharacterChosen(Player player)
+    {
+        if (player.CustomProperties.TryGetValue("Character", out object charPath))
+        {
+            string characterPath = charPath as string;
+            Debug.Log($"{player.NickName} selected character: {characterPath}");
+            return characterPath;
+        }
+        else
+        {
+            Debug.Log($"{player.NickName} has not selected a character yet.");
+            return "Characters/GregPlayable"; //default character if not chosen
+        }
+    }
 }

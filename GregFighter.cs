@@ -47,7 +47,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackStun = 1.2f;
         currentAttackProperty = "n/a";
         currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 5f;
+        currentAttackKnockbackForce = 3f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.5f;
         AttackReward = 6f;
@@ -57,7 +57,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
 
         isInAttack = true;
         notCancellable = true;
-        stunTimer = 1f;
+        stunTimer = 100f;
         
     }
     public override void CrouchedLightAttack()
@@ -68,7 +68,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackStun = 2f;
         currentAttackProperty = "launch";
         currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 5f;
+        currentAttackKnockbackForce = 0.6f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 1.5f;
         AttackReward = 8f;
@@ -82,7 +82,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackStun = 3.5f;
         currentAttackProperty = "low";
         currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 5f;
+        currentAttackKnockbackForce = 0.2f;
         currentAttackBlockStunDuration = 1.5f;
         stunTimer = 2.5f;
         AttackReward = 6f;
@@ -95,7 +95,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackStun = 6f;
         currentAttackProperty = "knockdown";
         currentAttackProperty2 = "low";
-        currentAttackKnockbackForce = 5f;
+        currentAttackKnockbackForce = 0.1f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.5f;
         AttackReward = 4f;
@@ -108,7 +108,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackStun = 3f;
         currentAttackProperty = "high";
         currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 5f;
+        currentAttackKnockbackForce = 1f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 1f;
     }
@@ -120,7 +120,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackStun = 1f;
         currentAttackProperty = "high";
         currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 5f;
+        currentAttackKnockbackForce = 3f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 1.5f;
     }
@@ -143,7 +143,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackStun = 1f;
         currentAttackProperty = "n/a";
         currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 5f;
+        currentAttackKnockbackForce = 1f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.5f;
     }
@@ -155,7 +155,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackStun = 6f;
         currentAttackProperty = "high"; //overhead attack
         currentAttackProperty2 = "knockdown";
-        currentAttackKnockbackForce = 5f;
+        currentAttackKnockbackForce = 3f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 1.5f;
         
@@ -176,6 +176,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackProperty2 = "knockdown";
         currentAttackKnockbackForce = 10f;
         currentAttackBlockStunDuration = 0.5f;
+        stunTimer = 0f;
         
     }
 
