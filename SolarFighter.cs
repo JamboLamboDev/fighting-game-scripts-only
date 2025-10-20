@@ -32,7 +32,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
         currentAttackStun = 1f;
         currentAttackProperty = "n/a";
         currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 5f;
+        currentAttackKnockbackForce = 0.3f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.2f;
         AttackReward = 4f;
@@ -47,9 +47,9 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
         currentAttackStun = 1.2f;
         currentAttackProperty = "n/a";
         currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 5f;
+        currentAttackKnockbackForce = 1f;
         currentAttackBlockStunDuration = 0.5f;
-        stunTimer = 0.5f;
+        stunTimer = 1f;
         AttackReward = 6f;
     }
     public override void NeutralSpecialAttack()
@@ -57,7 +57,14 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
 
         isInAttack = true;
         notCancellable = true;
-        stunTimer = 1f;
+        currentAttackDamage = 20f;
+        currentAttackStun = 2.2f;
+        currentAttackProperty = "high";
+        currentAttackProperty2 = "n/a";
+        currentAttackKnockbackForce = 1f;
+        currentAttackBlockStunDuration = 1.2f;
+        stunTimer = 0.5f;
+        AttackReward = 6f;
         
     }
     public override void CrouchedLightAttack()
@@ -68,7 +75,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
         currentAttackStun = 2f;
         currentAttackProperty = "launch";
         currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 5f;
+        currentAttackKnockbackForce = 0.5f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 1.5f;
         AttackReward = 8f;
@@ -82,7 +89,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
         currentAttackStun = 3.5f;
         currentAttackProperty = "low";
         currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 5f;
+        currentAttackKnockbackForce = 1f;
         currentAttackBlockStunDuration = 1.5f;
         stunTimer = 2.5f;
         AttackReward = 6f;
@@ -91,14 +98,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
     {
         isInAttack = true;
         notCancellable = true;
-        currentAttackDamage = 10f;
-        currentAttackStun = 6f;
-        currentAttackProperty = "knockdown";
-        currentAttackProperty2 = "low";
-        currentAttackKnockbackForce = 5f;
-        currentAttackBlockStunDuration = 0.5f;
-        stunTimer = 0.5f;
-        AttackReward = 4f;
+        stunTimer = 1.5f;
     }
     public override void AerialLightAttack()
     {
@@ -120,7 +120,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
         currentAttackStun = 1f;
         currentAttackProperty = "n/a";
         currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 5f;
+        currentAttackKnockbackForce = 0.5f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.5f;
     }
@@ -130,9 +130,9 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
         notCancellable = true;
         currentAttackDamage = 20f;
         currentAttackStun = 6f;
-        currentAttackProperty = "high"; //overhead attack
-        currentAttackProperty2 = "knockdown";
-        currentAttackKnockbackForce = 5f;
+        currentAttackProperty = "n/a"; //overhead attack
+        currentAttackProperty2 = "n/a";
+        currentAttackKnockbackForce = 1f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 1.5f;
         
@@ -153,7 +153,13 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
         currentAttackProperty2 = "knockdown";
         currentAttackKnockbackForce = 10f;
         currentAttackBlockStunDuration = 0.5f;
-        
+
+    }
+    
+    public void healSuccess()
+    {
+        EndAttack();
+        photonView.RPC("RPC_SetStatusEffect", photonView.Owner, "heal", 10f);
     }
 
 }

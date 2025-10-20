@@ -11,6 +11,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public Collider[] hurtboxes; // array of hurtbox colliders
 
     public float moveSpeed;
+    private float defaultMoveSpeed;
     private bool isBlocking; // if blocking
     private bool isCrouched; // is crouching
     public bool isGrounded;
@@ -47,22 +48,37 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public string currentAttackProperty2;
     public float currentAttackKnockbackForce;
     public float currentAttackBlockStunDuration;
+    public string currentAttackStatusEffect = "n/a";
+    public float currentAttackStatusEffectDur = 0f;
     public float AttackReward; //bonus spe meter for hitting.
     public bool isGuardBreakAttacking;
     public bool FacingRight = true;
     public bool isInCounter = false;
     public bool notCancellable; //for attacks to cancel early.
-    public ValBar healthBar;
-    public ValBar blockBar;
-    public ValBar specialBar;
     public BlockSFX blockEffect; // block effect.
     public PhotonView photonView; // to identify owner.
     private Coroutine doKnockback; // called when taking damage to execute knockback 
+    // ------------------------------------------------------- Bars ----------------------------------------------------
+    public ValBar healthBar;
+    public ValBar blockBar;
+    public ValBar specialBar;
+
+    //-------------------------------------------------------- Status Effects ------------------------------------------
+    public float healTimer;
+    public float dotTimer;  // for generic damage over time effects such as acid or fire and such.
+    public float slowTimer; //slow effects like ice, slows movement
+    public float shockTimer;//extra damage when hit
+    public float weaknessTimer;
+    public bool isAfflicted; //does the player have a status effect
+
+
+
 
     // Start is called before the first frame update
 
     void Start()
     {
+        defaultMoveSpeed = moveSpeed; // sets the character's speed set in char script to be their max speed.
         photonView = GetComponent<PhotonView>();
         characterController = GetComponent<CharacterController>();
         isCrouched = false;
@@ -196,7 +212,6 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 
     void updateChecks() //done every update
     {
-
         faceOpponent(); //always face opponent even when stunned
         if (!isInAttack) // double checks if hitboxes and hurtboxes are correctly enabled/disabled outside of attack 
         {
@@ -222,6 +237,13 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             blockBar.SetVal(blockMeter);
             specialBar.SetVal(specialMeter); //instant update for these bars
 
+        }
+        if (isAfflicted)
+        {
+            statusEffectUpdate();
+        }
+        if (health > maxHealth){ //caps hp
+            health = maxHealth;
         }
 
     }
@@ -266,7 +288,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         }
 
     }
-    public void TakeDamage(float damage, float stunDuration, string attackProperty, string attackProperty2, float knockbackForce, float blockStunDuration) //called by attacker when attack hitbox connects
+    public void TakeDamage(float damage, float stunDuration, string attackProperty, string attackProperty2, float knockbackForce, float blockStunDuration,string attackStatusEffect,float attackStatusEffectDur) //called by attacker when attack hitbox connects
     {
         if (isInCounter)
         {
@@ -332,6 +354,11 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                     comboCount = 1; // reset combo count if not in stun
                 }
 
+                if (shockTimer > 0)//if shocked do more damage
+                {
+                    damageScale *= 1.5f; //50% extra damage taken
+                }
+
                 health -= damage * damageScale;
                 stunTimer = stunDuration * stunScale;
                 specialMeter += damage * 0.5f; // gain special meter when taking damage
@@ -351,6 +378,10 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                 {
                     photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"Damaged"); ;
                     TakeKnockback(knockbackForce, false);
+                    if (attackProperty == "statusEffect" || attackProperty2 == "statusEffect")
+                    {
+                        photonView.RPC("RPC_SetStatusEffect", photonView.Owner, attackStatusEffect,attackStatusEffectDur);
+                    }
                 }
 
             }
@@ -361,10 +392,10 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     }
 
     [PunRPC]
-    public void RPC_TakeDamage(float damage, float stunDuration, string attackProperty, string attackProperty2, float knockbackForce, float blockStunDuration) //called by attacker when attack hitbox connects
+    public void RPC_TakeDamage(float damage, float stunDuration, string attackProperty, string attackProperty2, float knockbackForce, float blockStunDuration,string attackStatusEffect,float attackStatusEffectDur) //called by attacker when attack hitbox connects
     {
         if (!photonView.IsMine) return;
-        TakeDamage(damage, stunDuration, attackProperty, attackProperty2, knockbackForce, blockStunDuration);
+        TakeDamage(damage, stunDuration, attackProperty, attackProperty2, knockbackForce, blockStunDuration,attackStatusEffect,attackStatusEffectDur);
     }
     public bool blockSuccess(string attackProperty, string attackProperty2) //check if block is unsuccessful
     {
@@ -627,7 +658,11 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             specialBar.SetVal(specialMeter);
             isInAttack = false; // reset attack state so can only hit once
             notCancellable = false; //animation cancel
-            target.photonView.RPC("RPC_TakeDamage",target.photonView.Owner, currentAttackDamage, currentAttackStun, currentAttackProperty, currentAttackProperty2, currentAttackKnockbackForce, currentAttackBlockStunDuration);
+            if (weaknessTimer > 0)
+            {
+                currentAttackDamage /= 1.3f; // 30% less damage while weak
+            }
+            target.photonView.RPC("RPC_TakeDamage",target.photonView.Owner, currentAttackDamage, currentAttackStun, currentAttackProperty, currentAttackProperty2, currentAttackKnockbackForce, currentAttackBlockStunDuration,currentAttackStatusEffect,currentAttackStatusEffectDur);
             //insert hit sound/visual effects
             DisableAllHitboxes(); // disable hitboxes after hit
         }
@@ -664,6 +699,121 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         DisableAllHitboxes();
         EnableAllHurtboxes();
         Debug.Log("Attack ended");
+    }
+
+ [PunRPC]
+    public void RPC_SetStatusEffect(string statusEffect, float duration)
+    {
+        isAfflicted = true; // guaranteed affliction when this is called
+
+        switch (statusEffect)
+        {
+            case "heal":
+                if (healTimer < duration)
+                {
+                    healTimer = duration;
+                }
+                else
+                {
+                    // Give smaller instant heal if already healing
+                    health += 1f * duration;
+                    healthBar.SetVal(health);
+                }
+                break;
+
+            case "dot":
+                if (dotTimer < duration)
+                {
+                    dotTimer = duration;
+                }
+                else
+                {
+                    // Give extra damage if already burning
+                    health -= 2f * duration;
+                    healthBar.SetVal(health);
+                }
+                break;
+
+            case "slow":
+                if (slowTimer < duration)
+                {
+                    slowTimer = duration;
+                    moveSpeed *= 0.5f; // needs 'f' since 0.5 is a double literal
+                }
+                break;
+
+            case "shock":
+                if (shockTimer < duration)
+                {
+                    shockTimer = duration;
+                }
+                break;
+
+            case "weakness":
+                if (weaknessTimer < duration)
+                {
+                    weaknessTimer = duration;
+                }
+                break;
+
+            default:
+                Debug.LogWarning($"Unknown status effect: {statusEffect}");
+                break;
+        }
+    }
+
+
+    private void statusEffectUpdate()
+    {
+        isAfflicted = false; // set true if still afflicted, afflicted triggers this function.
+        if (healTimer > 0f)
+        {// healing removes debuffs.
+            dotTimer = 0f;
+            slowTimer = 0f;
+            shockTimer = 0f;
+            weaknessTimer = 0f;
+            healTimer -= Time.deltaTime;
+            health += 3f * Time.deltaTime; // regen effect
+            healthBar.SetVal(health);
+            isAfflicted = true;
+        } else // check debuffs since heals cleanses player
+        {
+            
+            if (dotTimer > 0f)
+            {
+                dotTimer -= Time.deltaTime;
+                health -= 3f * Time.deltaTime;
+                healthBar.SetVal(health);
+                isAfflicted = true;
+
+            }
+
+            if (slowTimer > 0f)
+            {
+                slowTimer -= Time.deltaTime;
+                if (slowTimer <= 0f) //checks here since timer is decremented earlier
+                {
+                    moveSpeed = defaultMoveSpeed;// resets speed back to normal when slow ends. speed is changed when inflicted only.
+                }
+                else
+                {
+                    isAfflicted = true;
+                }
+            }
+            
+            if (shockTimer > 0f)
+            {
+                shockTimer -= Time.deltaTime;
+                isAfflicted = true;
+            }
+            
+            if (weaknessTimer > 0f)
+            {
+                weaknessTimer -= Time.deltaTime;
+                isAfflicted = true;
+            } 
+        }
+        
     }
 
     public void counterStart()
