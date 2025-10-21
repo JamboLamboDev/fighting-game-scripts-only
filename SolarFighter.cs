@@ -13,7 +13,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
         maxBlockMeter = 200f;
         blockMeter = maxBlockMeter;
         blockRegenRate = 8f;
-        gravityScale = 0.9f;
+        gravityScale = 0.6f;
         maxSpecialMeter = 150f;
         specialMeter = 0f;
         crouchedSpecialCost = 60f;//heal
@@ -73,7 +73,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
         notCancellable = false;
         currentAttackDamage = 10f;
         currentAttackStun = 2f;
-        currentAttackProperty = "launch";
+        currentAttackProperty = "hardknockdown";
         currentAttackProperty2 = "n/a";
         currentAttackKnockbackForce = 0.5f;
         currentAttackBlockStunDuration = 0.5f;
@@ -85,20 +85,13 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
     {
         isInAttack = true;
         notCancellable = false;
-        currentAttackDamage = 15f;
-        currentAttackStun = 3.5f;
-        currentAttackProperty = "low";
-        currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 1f;
-        currentAttackBlockStunDuration = 1.5f;
-        stunTimer = 2.5f;
-        AttackReward = 6f;
+        stunTimer = 1f;
     }
     public override void CrouchedSpecialAttack()
     {
         isInAttack = true;
         notCancellable = true;
-        stunTimer = 1.5f;
+        stunTimer = 0.5f;
     }
     public override void AerialLightAttack()
     {

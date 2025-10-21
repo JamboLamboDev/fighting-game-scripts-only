@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
-
 public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 {
     FightingPlayerController opponent;  //find in start, used to face
     public Collider[] hitboxes; // array of hitbox colliders
     public Collider[] hurtboxes; // array of hurtbox colliders
+    [SerializeField] private string[] projectilePrefabLocations;
+    private int projectileLayer; //assign it to be same as hitboxes
 
     public float moveSpeed;
     private float defaultMoveSpeed;
@@ -91,8 +92,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     [PunRPC]
     public void RPC_Spawn(int playerLayerMask) //called after manager has already spawned both players and assigned playerLayerMask
     {
-
-
+        projectileLayer = playerLayerMask;
         foreach (var hb in hitboxes) //double check hitboxes and hurtboxes are on correct layer
         {
             if (hb != null)
@@ -689,6 +689,19 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 
     }
 
+    public void SpawnProjectile(int projID) //called by animation, generic version for most projectiles, specific ones will get a unique func
+    {
+        if (!photonView.IsMine) return;//1 proj spawned by owner
+        Debug.Log("spawning Projectile");
+        Vector3 pos = transform.position + new Vector3(FacingRight ? 1f : -1f, 1f, 0f);
+        Quaternion rot = FacingRight ? Quaternion.identity : Quaternion.Euler(0f, 180f, 0f);
+        string projectilePrefabLocation = projectilePrefabLocations[projID];
+        GameObject projObj = PhotonNetwork.Instantiate(projectilePrefabLocation, pos,rot);
+        Projectile proj = projObj.GetComponent<Projectile>();
+        proj.owner = this;
+        proj.SetVar(FacingRight ? Vector3.right : Vector3.left,projectileLayer);
+    }
+
 
 
     public void EndAttack() // called at end of attack animation to reset attack state
@@ -880,11 +893,12 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         blockBar.SetVal(blockMeter);
         specialBar.SetVal(specialMeter);
     }
-    
+
     public void CancellableMove() //moves that can be cancellable midway through
     {
         notCancellable = false; //animation cancel
     }
+    
     
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info) //network functionality
 {
