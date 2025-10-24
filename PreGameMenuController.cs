@@ -175,8 +175,7 @@ public class PreGameMenuController : MonoBehaviourPunCallbacks//menu that deals 
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
         Debug.Log($"{otherPlayer.NickName} left the room. Returning to main menu...");
-
-        // Option 1 — load a local scene (not synced)
+        PhotonNetwork.LeaveRoom();
         SceneManager.LoadScene("MainMenu");
     }
 }
