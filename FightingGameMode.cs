@@ -6,9 +6,10 @@ using TMPro;
 using Photon.Pun;
 using ExitGames.Client.Photon;
 using Photon.Realtime;
+using System.ComponentModel;
 
 
-public class FightingGameMode : MonoBehaviour
+public class FightingGameMode : MonoBehaviourPunCallbacks
 {
 
     public Transform player1Spawn;
@@ -20,30 +21,47 @@ public class FightingGameMode : MonoBehaviour
     private bool roundActive = false;
     public TextMeshProUGUI timerText;
     public TextMeshProUGUI roundText;
+    public TextMeshProUGUI matchWonText;
+    public TextMeshProUGUI player1NameText;
+    public TextMeshProUGUI player2NameText;
+    public TextMeshProUGUI p1comboCount;
+    public TextMeshProUGUI p2comboCount;
     private int p1Wins = 0;
     private int p2Wins = 0;
+    private int p1matchWins = 0;
+    private int p2matchWins = 0;
     public ValBar P1HPBar;
     public ValBar P2HPBar;
     public ValBar P1GuardBar;
-
     public ValBar P2GuardBar;
-
     public ValBar P1SpeBar;
-
     public ValBar P2SpeBar;
+    public ValBar P1FirstWin; //value from 0-1, fills up when win, using Valbar script since it already exists.
+    public ValBar P2FirstWin;
+    public ValBar P1SecondWin;
+    public ValBar P2SecondWin;
+    public TextMeshProUGUI p1SpecialMeterText;
+    public TextMeshProUGUI p2SpecialMeterText;
+    public TextMeshProUGUI winCountText;
+
     public GameObject P1 = null;
     public GameObject P2 = null;
-    public PhotonView photonView; //owner is host
     public Player player1Ref;
+    private string player1Nick;
     public Player player2Ref;
+    private string player2Nick;
+    public GameObject hud;
+    public GameObject EndGameScreen;
+    private bool player1Ready = false;
+    private bool player2Ready = false;
 
 
 
 
     void Start()
     {
-        photonView = GetComponent<PhotonView>();
         player1Ref = PhotonNetwork.MasterClient;
+        StartCoroutine(GetNicknames());
         StartCoroutine(GameLoop());
         
     }
@@ -135,11 +153,12 @@ public class FightingGameMode : MonoBehaviour
             }
         }
 
-        player1.SetBars(P1HPBar, P1GuardBar, P1SpeBar); 
-        player2.SetBars(P2HPBar, P2GuardBar, P2SpeBar);
+        player1.SetBars(P1HPBar, P1GuardBar, P1SpeBar,p1SpecialMeterText,p1comboCount); 
+        player2.SetBars(P2HPBar, P2GuardBar, P2SpeBar,p2SpecialMeterText,p2comboCount);
 
         if (PhotonNetwork.IsMasterClient)
         {
+            photonView.RPC("RPC_FillWinBars", RpcTarget.All, p1Wins, p2Wins); //UPDATE WIN BARS BETWEEN ROU
             photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "3");
             yield return new WaitForSeconds(1f);
             photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "2");
@@ -234,14 +253,35 @@ public class FightingGameMode : MonoBehaviour
 
         if (p1Wins >= 2 || p2Wins >= 2)
         {
-            roundText.text = "Match Over!";
-            yield break; // stops loop - PLACEHOLDER for returning to main menu or restarting match
+
+            if (PhotonNetwork.IsMasterClient)
+            {
+                photonView.RPC("RPC_EndGame", RpcTarget.All, p1Wins, p1matchWins, p2matchWins);
+            }
         }
         else
         {
             StartCoroutine(GameLoop());
         }
     }
+
+    IEnumerator GetNicknames() {
+        yield return new WaitUntil(() => PhotonNetwork.PlayerList.Length == 2);
+        foreach (Player player in PhotonNetwork.PlayerList)
+        {
+            if (player == PhotonNetwork.MasterClient)
+            {
+                player1Nick = player.NickName;
+                player1NameText.text = player1Nick;
+            }
+            else
+            {
+                player2Nick = player.NickName;
+                player2NameText.text = player2Nick;
+            }
+        }
+    }
+
 
     private string GetCharacterChosen(Player player)
     {
@@ -257,4 +297,134 @@ public class FightingGameMode : MonoBehaviour
             return "Characters/GregPlayable"; //default character if not chosen
         }
     }
+    [PunRPC]
+    public void RPC_SetPlayerReady(bool isMaster)
+    {
+        if (isMaster) //p1 is always host.
+        {
+            if (!player1Ready)
+            {
+                player1Ready = true;
+            }
+            else
+            {
+                player1Ready = false;
+
+            }
+        }
+        else
+        {
+            if (!player2Ready)
+            {
+                player2Ready = true;
+            }
+            else
+            {
+                player2Ready = false;
+            }
+        }
+
+        if (player1Ready && player2Ready)
+        {
+            photonView.RPC("RPC_RestartGame", RpcTarget.All);
+            StartCoroutine(GameLoop());
+        }
+    }
+
+    public override void OnPlayerLeftRoom(Player otherPlayer)
+    {
+        Debug.Log($"{otherPlayer.NickName} left the room. Returning to main menu...");
+        PhotonNetwork.LeaveRoom();
+        UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
+    }
+
+    public void QuitToMainMenu()
+    {
+        PhotonNetwork.LeaveRoom();
+        UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
+    }
+
+    public void QuitToDesktop()
+    {
+        PhotonNetwork.LeaveRoom();
+        Application.Quit();
+    }
+
+    public void ReadyButtonPressed()
+    {
+        bool isMaster = PhotonNetwork.IsMasterClient;
+        photonView.RPC("RPC_SetPlayerReady", RpcTarget.MasterClient, isMaster);
+    }
+
+    [PunRPC]
+    void RPC_FillWinBars(int player1Wins, int player2Wins)
+    {
+        //RESET ALL BARS
+        P1FirstWin.SetVal(0f);
+        P1SecondWin.SetVal(0f);
+        P2FirstWin.SetVal(0f);
+        P2SecondWin.SetVal(0f);
+        if (player1Wins == 1)
+        {
+            P1FirstWin.SetVal(1f);
+            ;
+        }
+        else if (player1Wins == 2)
+        {
+
+            P1SecondWin.SetVal(1f);
+        }
+
+        if (player2Wins == 1)
+        {
+            P2FirstWin.SetVal(1f);
+        }
+        else if (player2Wins == 2)
+        {
+            P2SecondWin.SetVal(1f);
+        }
+    }
+
+
+    [PunRPC]
+    public void RPC_EndGame(int player1Wins, int player1matchWins, int player2matchWins)
+    {
+        StartCoroutine(RPC_EndGameCoroutine(player1Wins, player1matchWins, player2matchWins));
+    }
+
+    [PunRPC]
+    public void RPC_RestartGame()
+    {
+        p1Wins = 0;
+        p2Wins = 0;
+        EndGameScreen.SetActive(false);
+        hud.SetActive(true);
+    }
+    IEnumerator RPC_EndGameCoroutine(int player1Wins, int player1matchWins, int player2matchWins)
+    {
+        roundText.text = "Match Over!";
+        yield return new WaitForSeconds(3f);
+        hud.SetActive(false);
+        EndGameScreen.SetActive(true);
+        if (player1Wins >= 2)
+        {
+            player1matchWins++;
+            matchWonText.text = player1Nick + "Survived the Match!";
+            if (PhotonNetwork.IsMasterClient)
+            {
+                p1matchWins++;
+            }
+        }
+        else
+        {
+            player2matchWins++;
+            matchWonText.text = player2Nick + "Survived the Match!";
+            if (!PhotonNetwork.IsMasterClient)
+            {
+                p2matchWins++;
+            }
+        }
+        winCountText.text = player1matchWins.ToString() + " | " + player2matchWins.ToString();
+    }
+    
 }

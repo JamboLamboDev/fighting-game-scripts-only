@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
+using TMPro;
 public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 {
     FightingPlayerController opponent;  //find in start, used to face
@@ -63,6 +64,9 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public ValBar healthBar;
     public ValBar blockBar;
     public ValBar specialBar;
+    public TextMeshProUGUI specialBarNum;
+    private int specialMeterInt; //for displaying special meter for player to see
+    public TextMeshProUGUI comboCountIndicator;
 
     //-------------------------------------------------------- Status Effects ------------------------------------------
     public float healTimer;
@@ -126,6 +130,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             return;
         }
 
+
         else
         {
             updateChecks();// hitboxes,facing opponent, block, etc
@@ -137,6 +142,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             {
                 block(); //check for block input
                 comboCount = 0; // reset combo count 
+                comboCountIndicator.text = "";
                 if (Input.GetKeyDown("w") && characterController.isGrounded && !isJumping)//jump if grounded and not already queued to jump
                 {
                     isJumping = true;
@@ -236,14 +242,29 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         {
             blockBar.SetVal(blockMeter);
             specialBar.SetVal(specialMeter); //instant update for these bars
+            updateSpecialMeterDisplay();
 
         }
         if (isAfflicted)
         {
             statusEffectUpdate();
         }
-        if (health > maxHealth){ //caps hp
+        if (health > maxHealth)
+        { //caps hp
             health = maxHealth;
+        }
+        
+       if (comboCountIndicator != null)
+        {
+            if (comboCount > 1)
+            {
+                comboCountIndicator.text = comboCount + "hits";
+            }
+
+            else
+            {
+                comboCountIndicator.text = "";
+            }
         }
 
     }
@@ -389,6 +410,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         healthBar.StartCoroutine(healthBar.ChangeToVal(health)); //recalibrate bars
         blockBar.SetVal(blockMeter);
         specialBar.SetVal(specialMeter);
+        updateSpecialMeterDisplay();
     }
 
     [PunRPC]
@@ -656,6 +678,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         {
             specialMeter += AttackReward;//bonus special meter from attack.
             specialBar.SetVal(specialMeter);
+            updateSpecialMeterDisplay();
             isInAttack = false; // reset attack state so can only hit once
             notCancellable = false; //animation cancel
             if (weaknessTimer > 0)
@@ -881,11 +904,14 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         doKnockback = null;
     }
 
-    public void SetBars(ValBar hp, ValBar block, ValBar spe) //set bars from gamemode.
+    public void SetBars(ValBar hp, ValBar block, ValBar spe,TextMeshProUGUI speText, TextMeshProUGUI comboCounter) //set bars from gamemode.
     {
         healthBar = hp;
         blockBar = block;
         specialBar = spe;
+        specialBarNum = speText;
+        comboCountIndicator = comboCounter;
+        updateSpecialMeterDisplay();
         healthBar.SetMaxValue(maxHealth);
         blockBar.SetMaxValue(maxBlockMeter);
         specialBar.SetMaxValue(maxSpecialMeter);
@@ -897,6 +923,12 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public void CancellableMove() //moves that can be cancellable midway through
     {
         notCancellable = false; //animation cancel
+    }
+
+    private void updateSpecialMeterDisplay() //updates special meter text display
+    {
+        specialMeterInt = Mathf.FloorToInt(specialMeter);
+        specialBarNum.text = specialMeterInt.ToString();
     }
     
     
@@ -925,6 +957,19 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             if (healthBar != null) healthBar.SetVal(this.health);
             if (blockBar != null) blockBar.SetVal(this.blockMeter);
             if (specialBar != null) specialBar.SetVal(this.specialMeter);
+            if (specialBarNum != null) updateSpecialMeterDisplay();
+            if (comboCountIndicator != null)
+            {
+                if (comboCount > 1)
+                {
+                    comboCountIndicator.text = comboCount + "hits";
+                }
+                else
+                {
+                    comboCountIndicator.text = "";
+                }
+            }
+
     }
 }
 }
