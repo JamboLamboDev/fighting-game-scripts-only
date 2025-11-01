@@ -160,10 +160,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         stunTimer = 1.5f;
         
     }
-    public override void GuardBreakSuccess(FightingPlayerController target) //unfinished
-    {
-        return;
-    }
+
 
     public override void CounterSuccess()
     {

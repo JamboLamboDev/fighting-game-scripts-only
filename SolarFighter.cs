@@ -130,11 +130,6 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
         stunTimer = 1.5f;
         
     }
-    public override void GuardBreakSuccess(FightingPlayerController target) //unfinished
-    {
-        return;
-    }
-
     public override void CounterSuccess()
     {
         photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Counter");
