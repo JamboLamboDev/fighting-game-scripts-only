@@ -11,9 +11,10 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public Collider[] hurtboxes; // array of hurtbox colliders
     [SerializeField] private string[] projectilePrefabLocations;
     private int projectileLayer; //assign it to be same as hitboxes
-
+    [SerializeField] private float guardBreakKnockback; //knockback on gb success to make animation look better
     public float moveSpeed;
     private float defaultMoveSpeed;
+    private float dashTimer;
     private bool isBlocking; // if blocking
     private bool isCrouched; // is crouching
     public bool isGrounded;
@@ -23,6 +24,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public Animator animator;
     public float health;
     private bool isWalking = false;
+    private bool isDashing = false;
     public float maxHealth; //changed in child class to set character specific health
     public float blockMeter; // depletes when blocking, regenerates when not blocking
     public float maxBlockMeter;
@@ -67,6 +69,11 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public TextMeshProUGUI specialBarNum;
     private int specialMeterInt; //for displaying special meter for player to see
     public TextMeshProUGUI comboCountIndicator;
+    //-------------------------------------------------------- Character Color --------------------------------------------
+    [SerializeField] private Renderer[] characterRenderers;
+    [SerializeField] private Color guardBreakColor;
+    private Color[] defaultColors;
+    private Material[] cachedMaterials;
 
     //-------------------------------------------------------- Status Effects ------------------------------------------
     public float healTimer;
@@ -91,6 +98,15 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         stunTimer = 100f; // stunned until match starts.
         animator.SetBool("isGrounded", true);
         blockEffect = GetComponentInChildren<BlockSFX>();
+        characterRenderers = GetComponentsInChildren<Renderer>();
+        cachedMaterials = new Material[characterRenderers.Length];
+        defaultColors = new Color[characterRenderers.Length];
+
+        for (int i = 0; i < characterRenderers.Length; i++)
+        {
+            cachedMaterials[i] = characterRenderers[i].material; // cache material reference
+            defaultColors[i] = cachedMaterials[i].color;         // cache default color
+        }
     }
 
     [PunRPC]
@@ -125,6 +141,23 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     // Update is called once per frame
     void Update()
     {
+        if (isGuardBreakAttacking)
+        {
+            float lerp = (Mathf.Sin(Time.time * 7f) + 1f) / 2f;
+            for (int i = 0; i < cachedMaterials.Length; i++)
+            {
+                cachedMaterials[i].color = Color.Lerp(defaultColors[i], guardBreakColor, lerp);
+            }
+
+        }
+        else
+        {
+            for (int i = 0; i < cachedMaterials.Length; i++)
+            {
+                cachedMaterials[i].color = defaultColors[i];
+            }
+        }
+        
         if (!photonView.IsMine)
         {
             return;
@@ -133,7 +166,31 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 
         else
         {
+            if (Input.GetKeyDown("w") && characterController.isGrounded && !isJumping)//jump if grounded and not already queued to jump
+            {
+                isJumping = true;
+                isDashing = false;
+            }
+            else if (Input.GetKeyUp(KeyCode.LeftShift))
+            {
+                if (!isDashing && stunTimer <= 0f && !isJumping && characterController.isGrounded)
+                {
+                    photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"Dash");
+                    isDashing = true;
+                    stunTimer += 0.5f; // small stun during dash
+                    dashTimer = 0.3f; // duration of dash
+                }
+            }
+            if (isDashing)
+            {
+                dashTimer -= Time.deltaTime;
+                if (dashTimer <= 0f)
+                {
+                    isDashing = false;
+                }
+            }
             updateChecks();// hitboxes,facing opponent, block, etc
+            moveChar();
             if (stunTimer > 0 && !notCancellable) //can't do anything if stunned and current state isnt cancellable
             {
                 stunTimer -= Time.deltaTime;
@@ -142,11 +199,6 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             {
                 block(); //check for block input
                 comboCount = 0; // reset combo count 
-                comboCountIndicator.text = "";
-                if (Input.GetKeyDown("w") && characterController.isGrounded && !isJumping)//jump if grounded and not already queued to jump
-                {
-                    isJumping = true;
-                }
                 isKnockedDown = false; // get up if knocked down and stun is over
 
                 if (Input.GetKey("s") && characterController.isGrounded) //crouch only if grounded 
@@ -172,7 +224,10 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                 {
                     Attack("special");
                 }
-                moveChar();
+                else if (Input.GetKeyDown(KeyCode.Space)) //guard break attack
+                {
+                    photonView.RPC("RPC_GuardBreak", RpcTarget.All);
+                }
             }
         }
 
@@ -271,7 +326,13 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 
     void moveChar()
     {
-        if (!isCrouched)
+        if (isDashing)
+        {
+            float dashSpeed = moveSpeed * 3f; 
+            Vector3 dashMovement = new Vector3(FacingRight ? 1f : -1f, 0f, 0f);
+            characterController.Move(dashMovement * Time.deltaTime * dashSpeed);
+        }
+        else if (!isCrouched)
         {
             if (!characterController.isGrounded)
             {
@@ -280,11 +341,13 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 
 
             }
+
             else if (isJumping)
             {
                 fallingspeed = 3f; // jump strength
                 photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"Jump"); // play jump animation ONLY when jump is initiated
                 isJumping = false;
+                isDashing = false;//cant dash if jumping
             }
             else
             {
@@ -293,6 +356,11 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             }
 
             float horizontalInput = Input.GetAxis("Horizontal");
+            if (stunTimer > 0f)
+            {
+                horizontalInput = 0f; // can't move if stunned
+            }
+
             Vector3 movement = new Vector3(horizontalInput, fallingspeed, 0);
 
             if (horizontalInput != 0)
@@ -646,12 +714,23 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public abstract void ForwardLightAttack();
     public abstract void ForwardHeavyAttack();
     public abstract void CounterSuccess(); //set to return if no counter i kit
-    public abstract void GuardBreakSuccess(FightingPlayerController target); //called when guard break attack hits
-    public void GuardBreak()
+    public void Finisher()//called when finisher completes
+    {
+        animator.SetBool("FinisherTriggered", false);
+        stunTimer = 0f; //end stun on finisher hit
+        notCancellable = false;
+        if (photonView.IsMine)
+        {
+            opponent.photonView.RPC("RPC_TakeDamage", opponent.photonView.Owner, 10f, 5f, "unblockable", "knockdown", 3f, 10f, "n/a", 0f); //heavy damage and knockdown on finisher hit
+        }
+    }
+    [PunRPC]
+    public void RPC_GuardBreak()
     { //attack that stuns opponent and breaks guard meter
         isGuardBreakAttacking = true;
-        photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"GuardBreakAttack");
-        stunTimer = 6f; //framedata
+        if (!photonView.IsMine) return; //only owner does the rest.
+        photonView.RPC("RPC_PlayAnimation",RpcTarget.All,"GuardBreakAttack");
+        stunTimer = 3f; //framedata
         //GuardBreakHit will be called by opponent if it hits
     }
 
@@ -695,21 +774,33 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 
     public void GuardBreakHit(FightingPlayerController enemy) //called when hit by guard break attack
     {
+        if (!photonView.IsMine) return; //only owner to verify.
         if (!isGuardBreakAttacking) //cant be hit by guard break if you are doing one.
         {
             lastBlockTime = Time.time;
             blockMeter = 0; // break block meter
-            stunTimer += 20f; // stunned
             blockBar.StartCoroutine(blockBar.ChangeToVal(blockMeter));
-            enemy.GuardBreakSuccess(this); //notify attacker of successful guard break
-                                           //knocked back logic here
-                                           //insert special hit sound/visual effects
+            TakeDamage(5f, 100f, "unblockable", "n/a", guardBreakKnockback, 0f, "n/a", 0f); //stun until hit by finisher
+            enemy.photonView.RPC("RPC_GuardBreakSuccess", RpcTarget.All); //their guard break is successful
+            enemy.photonView.RPC("RPC_EndGuardBreakAttack", RpcTarget.All); //end their guard break attack state
+            photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "GuardBroken"); // play guard broken animation
+
         }
         else
         {
-            enemy.isGuardBreakAttacking = false; //their guard break fails and leaves them open
+            enemy.photonView.RPC("RPC_EndGuardBreakAttack", RpcTarget.All); //their guard break fails and leaves them open
         }
 
+    }
+    [PunRPC]
+    public void RPC_GuardBreakSuccess()
+    {
+        animator.SetBool("FinisherTriggered", true); //triggers the finisher after guard break is successful
+    }
+    [PunRPC]
+    public void RPC_EndGuardBreakAttack()
+    {
+        isGuardBreakAttacking = false;
     }
 
     public void SpawnProjectile(int projID) //called by animation, generic version for most projectiles, specific ones will get a unique func
@@ -735,6 +826,10 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         DisableAllHitboxes();
         EnableAllHurtboxes();
         Debug.Log("Attack ended");
+        if (isGuardBreakAttacking)
+        {
+            photonView.RPC("RPC_EndGuardBreakAttack", RpcTarget.All);
+        }
     }
 
  [PunRPC]
