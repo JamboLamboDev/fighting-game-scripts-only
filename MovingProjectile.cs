@@ -16,7 +16,7 @@ public class MovingProjectile : Projectile //generic moving projectile
         lifetime -= Time.deltaTime;
         if (moveDirection != Vector3.zero)
         {
-            transform.Translate(moveDirection * projSpeed * Time.deltaTime);
+            transform.Translate(moveDirection * projSpeed * Time.deltaTime, Space.World);
         }
         if (lifetime <= 0)
         {

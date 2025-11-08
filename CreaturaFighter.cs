@@ -3,29 +3,29 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
-public class GregFighter : FightingPlayerController,IPunObservable //inherits from FightingPlayerController, to make gregs moveset. Greg is a balanced all-around fighter who has a simple moveset with lots of tools and good aerial pressure.
+public class CreaturaFighter : FightingPlayerController, IPunObservable //creatura moveset, berserker with weak defense but high damage output who uses raw aggression
 {
     void Awake() //set character specific stats
     {
-        maxHealth = 100f;//average hp
-        jumpStrengthMult = 1.1f;//average jump
+        maxHealth = 200f; //tanky because defensive ability is terrible therefore more health to compensate
+        jumpStrengthMult = 1.3f;
         health = maxHealth;
-        moveSpeed = 1.7f;//slightly above average speed
-        maxBlockMeter = 100f;//default block
+        moveSpeed = 1.7f;//average speed
+        maxBlockMeter = 0f; // NO BLOCK AT ALL because character is all about raw aggression and being a berserker, they lose in any prolonged fight but has better hp, specials and damage to compensate
         blockMeter = maxBlockMeter;
-        blockRegenRate = 5f;//slightly above average block regen
-        gravityScale = 0.3f;//slightly lower gravity for better aerial control
-        maxSpecialMeter = 100f; //average special meter
-        specialMeter = 0f;
-        crouchedSpecialCost = 20f; //cheap cc mixup
-        aerialSpecialCost = 40f; // strong aerial attack at a reasonable cost
-        neutralSpecialCost = 40f;// relatively cheap neutral special that is a counter, to give a strong tool to allow for defensive play if needed, which grants better adaptability
-        stunTimer = 0.5f; //locks player into attack
+        blockRegenRate = 0f; //worse regen but stronger block, focus on aggresion after getting an opening
+        gravityScale = 0.4f; //normal gravity
+        maxSpecialMeter = 100f; //regular special meter cap
+        specialMeter = 100f; //starts with full special meter to encourage aggressive playstyle
+        crouchedSpecialCost = 40f; //roar attack that buffs and does pressure
+        aerialSpecialCost = 40f; //weak aerial, but character is focused on ground aggression
+        neutralSpecialCost = 30f; //high damage and combo
+        stunTimer = 0.5f;
 
     }
 
-    // ---ATTACKS--- \\
-    // greg's attacks are balanced all around, except his aerials which are stronger to give him more options in neutral, by having better aerial pressure than other characters
+    // ---ATTACKS--- in progress
+    // zlorp's attacks are quick and can inflict status effects
     public override void NeutralLightAttack() //data for attack
     {
         isInAttack = true;
@@ -59,7 +59,14 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
 
         isInAttack = true;
         notCancellable = true;
-        stunTimer = 100f;
+        currentAttackDamage = 20f;
+        currentAttackStun = 2.2f;
+        currentAttackProperty = "high";
+        currentAttackProperty2 = "n/a";
+        currentAttackKnockbackForce = 1f;
+        currentAttackBlockStunDuration = 1.2f;
+        stunTimer = 0.5f;
+        AttackReward = 6f;
         
     }
     public override void CrouchedLightAttack()

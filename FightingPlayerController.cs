@@ -30,6 +30,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public float maxBlockMeter;
     public float blockRegenRate;
     public float gravityScale; // to adjust gravity for character controller
+    public float jumpStrengthMult; // to adjust jump strength per character.
     private float fallingspeed; // to apply gravity
     private bool isJumping; // to queue jump input
     public bool isGrabbed; // check if grabbed to allow escape attempts
@@ -56,6 +57,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public float currentAttackStatusEffectDur = 0f;
     public float AttackReward; //bonus spe meter for hitting.
     public bool isGuardBreakAttacking;
+    public bool hasbeenGuardBroken; //to prevent multiple gb hits in one attack
     public bool FacingRight = true;
     public bool isInCounter = false;
     public bool notCancellable; //for attacks to cancel early.
@@ -82,7 +84,8 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public float shockTimer;//extra damage when hit
     public float weaknessTimer;
     public bool isAfflicted; //does the player have a status effect
-
+    public ParticleSystem[] particles; //particles for status effects
+    //--------------------------------------------------------- Methods ---------------------------------------------------
 
 
 
@@ -125,7 +128,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                 hb.gameObject.layer = playerLayerMask;
         }
 
-        FightingPlayerController[] players = FindObjectsOfType<FightingPlayerController>(); //automatically assign opponent
+        FightingPlayerController[] players = FindObjectsByType<FightingPlayerController>(FindObjectsSortMode.None); //automatically assign opponent
         foreach (var player in players)
         {
             if (player != this)
@@ -200,6 +203,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                 block(); //check for block input
                 comboCount = 0; // reset combo count 
                 isKnockedDown = false; // get up if knocked down and stun is over
+                hasbeenGuardBroken = false; // reset guard break status
 
                 if (Input.GetKey("s") && characterController.isGrounded) //crouch only if grounded 
                 {
@@ -304,6 +308,16 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         {
             statusEffectUpdate();
         }
+        else
+        {
+            for (int i = 0; i < particles.Length; i++) //turn off all FX particles when no afflictions.
+            {
+                if (particles[i].isPlaying)
+                {
+                    StopParticleSystem(i);
+                }
+            }
+        }
         if (health > maxHealth)
         { //caps hp
             health = maxHealth;
@@ -344,7 +358,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 
             else if (isJumping)
             {
-                fallingspeed = 3f; // jump strength
+                fallingspeed = 3f * jumpStrengthMult; // jump strength
                 photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"Jump"); // play jump animation ONLY when jump is initiated
                 isJumping = false;
                 isDashing = false;//cant dash if jumping
@@ -714,7 +728,8 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public abstract void ForwardLightAttack();
     public abstract void ForwardHeavyAttack();
     public abstract void CounterSuccess(); //set to return if no counter i kit
-    public void Finisher()//called when finisher completes
+
+    public virtual void Finisher()//called when finisher completes
     {
         animator.SetBool("FinisherTriggered", false);
         stunTimer = 0f; //end stun on finisher hit
@@ -772,9 +787,9 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 
     }
 
-    public void GuardBreakHit(FightingPlayerController enemy) //called when hit by guard break attack
+    public virtual void GuardBreakHit(FightingPlayerController enemy) //called when hit by guard break attack
     {
-        if (!photonView.IsMine) return; //only owner to verify.
+        if (!photonView.IsMine || isKnockedDown || hasbeenGuardBroken) return; //only owner to verify, cant be gb if already down
         if (!isGuardBreakAttacking) //cant be hit by guard break if you are doing one.
         {
             lastBlockTime = Time.time;
@@ -784,7 +799,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             enemy.photonView.RPC("RPC_GuardBreakSuccess", RpcTarget.All); //their guard break is successful
             enemy.photonView.RPC("RPC_EndGuardBreakAttack", RpcTarget.All); //end their guard break attack state
             photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "GuardBroken"); // play guard broken animation
-
+            hasbeenGuardBroken = true; // prevent multiple gb hits in one attack
         }
         else
         {
@@ -836,6 +851,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public void RPC_SetStatusEffect(string statusEffect, float duration)
     {
         isAfflicted = true; // guaranteed affliction when this is called
+        PlayParticleSystem(1); //debuff
 
         switch (statusEffect)
         {
@@ -907,8 +923,21 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             health += 3f * Time.deltaTime; // regen effect
             healthBar.SetVal(health);
             isAfflicted = true;
+
+            if (particles[2].isPlaying == false)
+            {
+                PlayParticleSystem(2); //heal
+            } else if (particles[1].isPlaying == true)
+            {
+                StopParticleSystem(1); //stop debuff if healing
+            }
+
         } else // check debuffs since heals cleanses player
         {
+            if (particles[1].isPlaying == false)
+            {
+                PlayParticleSystem(1); //debuff
+            }
             
             if (dotTimer > 0f)
             {
@@ -1025,8 +1054,29 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         specialMeterInt = Mathf.FloorToInt(specialMeter);
         specialBarNum.text = specialMeterInt.ToString();
     }
+
+    public void PlayParticleSystem(int index) //called by animation
+    {
+        if (!photonView.IsMine) return;
+        photonView.RPC("RPC_PlayParticleSystem", RpcTarget.All, index);
+    }
+    public void StopParticleSystem(int index) //called by animation
+    {
+        if (!photonView.IsMine) return;
+        photonView.RPC("RPC_StopParticleSystem", RpcTarget.All, index);
+    }
+    [PunRPC]
+    public void RPC_PlayParticleSystem(int index)
+    {
+        particles[index].Play();
+    }
+    [PunRPC]
+    public void RPC_StopParticleSystem(int index)
+    {
+        particles[index].Stop();
+    }
     
-    
+
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info) //network functionality
 {
         if (stream.IsWriting)

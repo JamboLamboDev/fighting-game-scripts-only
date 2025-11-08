@@ -7,23 +7,25 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
 {
     void Awake() //set character specific stats
     {
-        maxHealth = 150f;
+        maxHealth = 150f; //tanky
+        jumpStrengthMult = 1.2f; //strong jump because stronger 
         health = maxHealth;
-        moveSpeed = 1.2f;
-        maxBlockMeter = 200f;
+        moveSpeed = 1.2f; //slow char
+        maxBlockMeter = 200f; //strong block because sword and shield
         blockMeter = maxBlockMeter;
         blockRegenRate = 8f;
-        gravityScale = 0.6f;
-        maxSpecialMeter = 150f;
+        gravityScale = 0.5f; //heavy gravity because full armor
+        maxSpecialMeter = 150f; //can save more special for heals but can't build it faster
         specialMeter = 0f;
         crouchedSpecialCost = 60f;//heal
-        aerialSpecialCost = 0f; //none
+        aerialSpecialCost = 0f; //none, can't do aerial attacks 
         neutralSpecialCost = 30f;//slash
         stunTimer = 0.5f; //locks player into attack
-        
+
     }
 
-    // ---ATTACKS--- \\
+    // ---ATTACKS--- 
+    // attacks are slow but strong
     public override void NeutralLightAttack() //data for attack
     {
         isInAttack = true;

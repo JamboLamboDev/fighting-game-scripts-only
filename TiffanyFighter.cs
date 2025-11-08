@@ -3,29 +3,29 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
-public class GregFighter : FightingPlayerController,IPunObservable //inherits from FightingPlayerController, to make gregs moveset. Greg is a balanced all-around fighter who has a simple moveset with lots of tools and good aerial pressure.
+public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany moveset, ninja who casts projectiles and uses agility as a zoner.
 {
     void Awake() //set character specific stats
     {
-        maxHealth = 100f;//average hp
-        jumpStrengthMult = 1.1f;//average jump
+        maxHealth = 100f; //default hp
+        jumpStrengthMult = 1.4f; //agile jump
         health = maxHealth;
-        moveSpeed = 1.7f;//slightly above average speed
-        maxBlockMeter = 100f;//default block
+        moveSpeed = 1.6f; //slightly slow
+        maxBlockMeter = 60f; //weak block because zoner
         blockMeter = maxBlockMeter;
-        blockRegenRate = 5f;//slightly above average block regen
-        gravityScale = 0.3f;//slightly lower gravity for better aerial control
-        maxSpecialMeter = 100f; //average special meter
+        blockRegenRate = 3f; //worse regen but stronger block, focus on aggresion after getting an opening
+        gravityScale = 0.3f; //good aerial control
+        maxSpecialMeter = 200f;  //can save more special for projectiles
         specialMeter = 0f;
-        crouchedSpecialCost = 20f; //cheap cc mixup
-        aerialSpecialCost = 40f; // strong aerial attack at a reasonable cost
-        neutralSpecialCost = 40f;// relatively cheap neutral special that is a counter, to give a strong tool to allow for defensive play if needed, which grants better adaptability
-        stunTimer = 0.5f; //locks player into attack
+        crouchedSpecialCost = 20f;
+        aerialSpecialCost = 10f;
+        neutralSpecialCost = 20f;
+        stunTimer = 0.5f;
 
     }
 
-    // ---ATTACKS--- \\
-    // greg's attacks are balanced all around, except his aerials which are stronger to give him more options in neutral, by having better aerial pressure than other characters
+    // ---ATTACKS--- in progress
+    // zlorp's attacks are quick and can inflict status effects
     public override void NeutralLightAttack() //data for attack
     {
         isInAttack = true;
@@ -59,7 +59,14 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
 
         isInAttack = true;
         notCancellable = true;
-        stunTimer = 100f;
+        currentAttackDamage = 20f;
+        currentAttackStun = 2.2f;
+        currentAttackProperty = "high";
+        currentAttackProperty2 = "n/a";
+        currentAttackKnockbackForce = 1f;
+        currentAttackBlockStunDuration = 1.2f;
+        stunTimer = 0.5f;
+        AttackReward = 6f;
         
     }
     public override void CrouchedLightAttack()
