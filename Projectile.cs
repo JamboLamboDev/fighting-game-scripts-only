@@ -42,6 +42,7 @@ public class Projectile : MonoBehaviour //generic stationary projectile, that is
     {
         if (owner.weaknessTimer > 0)
         {
+            if (!photonView.IsMine) return;
             currentAttackDamage /= 1.3f; // 30% less damage while weak
         }
         target.photonView.RPC("RPC_TakeDamage", target.photonView.Owner, currentAttackDamage, currentAttackStun, currentAttackProperty, currentAttackProperty2, currentAttackKnockbackForce, currentAttackBlockStunDuration, currentAttackStatusEffect, currentAttackStatusEffectDur);
