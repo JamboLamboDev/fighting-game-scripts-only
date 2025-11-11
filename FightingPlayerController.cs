@@ -1033,7 +1033,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         doKnockback = null;
     }
 
-    public void SetBars(ValBar hp, ValBar block, ValBar spe,TextMeshProUGUI speText, TextMeshProUGUI comboCounter) //set bars from gamemode.
+    public void SetBars(ValBar hp, ValBar block, ValBar spe, TextMeshProUGUI speText, TextMeshProUGUI comboCounter) //set bars from gamemode.
     {
         healthBar = hp;
         blockBar = block;
@@ -1049,6 +1049,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         specialBar.SetVal(specialMeter);
     }
 
+    
     public void CancellableMove() //moves that can be cancellable midway through
     {
         notCancellable = false; //animation cancel
@@ -1080,10 +1081,10 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     {
         particles[index].Stop();
     }
-    
+
 
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info) //network functionality
-{
+    {
         if (stream.IsWriting)
         {
             //send others ours
@@ -1120,7 +1121,8 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                 }
             }
 
+        }
     }
-}
+
 }
 

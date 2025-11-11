@@ -14,8 +14,8 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
 
     public Transform player1Spawn;
     public Transform player2Spawn;
-    private FightingPlayerController player1;
-    private FightingPlayerController player2;
+    public FightingPlayerController player1;
+    public FightingPlayerController player2;
     public float roundTime = 99f; //stc
     private float currentTime;
     private bool roundActive = false;
@@ -86,9 +86,10 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
         yield return StartCoroutine(RoundActive());
         yield return StartCoroutine(RoundEnd());
     }
-    
+
     IEnumerator RoundStart()
     {
+        Debug.Log("Starting Round");
         yield return new WaitForSeconds(0.5f);
         if (PhotonNetwork.IsMasterClient)
         {
@@ -143,23 +144,37 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
 
         if (!PhotonNetwork.IsMasterClient) //player 2 needs to figure out which player is whch
         {
+            yield return new WaitUntil(() => GameObject.FindGameObjectsWithTag("Player").Length == 2);
             var players = GameObject.FindGameObjectsWithTag("Player");
-            foreach (var p in players)
+            if (player1 == null || player2 == null)
             {
-                var pv = p.GetComponent<PhotonView>();
-                if (pv.Owner.IsLocal)
-                    player2 = p.GetComponent<FightingPlayerController>();
-                else
-                    player1 = p.GetComponent<FightingPlayerController>();
+                foreach (var p in players)
+                {
+                    var pv = p.GetComponent<FightingPlayerController>();
+                    if (pv.photonView.IsMine)
+                    {
+                        player2 = pv;
+                        Debug.Log("Assigned Player 2");
+                    }
+                    else
+                    {
+                        player1 = pv;
+                        Debug.Log("Assigned Player 1");
+                    }
+                }
             }
         }
-        yield return new WaitForSeconds(0.5f);
-        player1.SetBars(P1HPBar, P1GuardBar, P1SpeBar,p1SpecialMeterText,p1comboCount); 
-        player2.SetBars(P2HPBar, P2GuardBar, P2SpeBar,p2SpecialMeterText,p2comboCount);
-
+        while (player1 == null || player2 == null)
+            yield return null;
+        Debug.Log("Both players assigned.");
+        Debug.Log("Setting our bars...");
+        player1.SetBars(P1HPBar, P1GuardBar, P1SpeBar, p1SpecialMeterText, p1comboCount);
+        player2.SetBars(P2HPBar, P2GuardBar, P2SpeBar, p2SpecialMeterText, p2comboCount);
         if (PhotonNetwork.IsMasterClient)
         {
-            photonView.RPC("RPC_FillWinBars", RpcTarget.All, p1Wins, p2Wins); //UPDATE WIN BARS BETWEEN ROU
+            Debug.Log("Setting Wins...");
+            photonView.RPC("RPC_FillWinBars", RpcTarget.All, p1Wins, p2Wins); //UPDATE WIN BARS BETWEEN ROUNds
+            Debug.Log("All Checks Finished.");
             photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "3");
             yield return new WaitForSeconds(1f);
             photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "2");
@@ -168,7 +183,6 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
             yield return new WaitForSeconds(1f);
             player1.photonView.RPC("RPC_SetStun", player1.photonView.Owner, 0f);
             player2.photonView.RPC("RPC_SetStun", player2.photonView.Owner, 0f);
-
             photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "Match Start!");
             currentTime = roundTime;
             yield return new WaitForSeconds(2f);
