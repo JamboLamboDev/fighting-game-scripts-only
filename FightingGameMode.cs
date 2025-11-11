@@ -89,6 +89,7 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
     
     IEnumerator RoundStart()
     {
+        yield return new WaitForSeconds(0.5f);
         if (PhotonNetwork.IsMasterClient)
         {
             if (player1 != null)
@@ -152,7 +153,7 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
                     player1 = p.GetComponent<FightingPlayerController>();
             }
         }
-
+        yield return new WaitForSeconds(0.5f);
         player1.SetBars(P1HPBar, P1GuardBar, P1SpeBar,p1SpecialMeterText,p1comboCount); 
         player2.SetBars(P2HPBar, P2GuardBar, P2SpeBar,p2SpecialMeterText,p2comboCount);
 

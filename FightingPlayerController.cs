@@ -4,6 +4,7 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 using TMPro;
+using System.Collections.Concurrent;
 public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 {
     FightingPlayerController opponent;  //find in start, used to face
@@ -13,18 +14,17 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     private int projectileLayer; //assign it to be same as hitboxes
     [SerializeField] private float guardBreakKnockback; //knockback on gb success to make animation look better
     public float moveSpeed;
+    public bool isWalking;
     private float defaultMoveSpeed;
     private float dashTimer;
-    private bool isBlocking; // if blocking
-    private bool isCrouched; // is crouching
-    public bool isGrounded;
+    public bool isBlocking; // if blocking
+    public bool isCrouched; // is crouching
     public bool isKnockedDown; //hard knockdown when hit by low heavy, grabs, special moves, etc
     public float stunTimer; // frame count for stun, attacks, blocks, etc
     private CharacterController characterController;
     public Animator animator;
     public float health;
-    private bool isWalking = false;
-    private bool isDashing = false;
+    public bool isDashing = false;
     public float maxHealth; //changed in child class to set character specific health
     public float blockMeter; // depletes when blocking, regenerates when not blocking
     public float maxBlockMeter;
@@ -33,10 +33,8 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public float jumpStrengthMult; // to adjust jump strength per character.
     private float fallingspeed; // to apply gravity
     private bool isJumping; // to queue jump input
-    public bool isGrabbed; // check if grabbed to allow escape attempts
     public int comboCount; // counts hits in a combo, resets when stun ends
     private float lastBlockTime; // to track time since last block for regen delay
-
     private float damageScale; // scales damage taken based on combo count
     private float stunScale; // scales stun duration based on combo count
     public float specialMeter;
@@ -194,7 +192,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             }
             updateChecks();// hitboxes,facing opponent, block, etc
             moveChar();
-            if (stunTimer > 0 && !notCancellable) //can't do anything if stunned and current state isnt cancellable
+            if (stunTimer > 0) //can't do anything if stunned and current state isnt cancellable
             {
                 stunTimer -= Time.deltaTime;
             }
@@ -266,12 +264,10 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         if ((FacingRight && Input.GetAxis("Horizontal") < 0) || (!FacingRight && Input.GetAxis("Horizontal") > 0)) //only block if holding away from opponent
         {
             isBlocking = true;
-            animator.SetBool("isBlocking", true);
         }
         else
         {
             isBlocking = false;
-            animator.SetBool("isBlocking", false);
         }
     }
 
@@ -356,7 +352,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 
             }
 
-            else if (isJumping)
+            else if (isJumping && stunTimer <= 0f) //stun interrupts jump
             {
                 fallingspeed = 3f * jumpStrengthMult; // jump strength
                 photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"Jump"); // play jump animation ONLY when jump is initiated
@@ -370,6 +366,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             }
 
             float horizontalInput = Input.GetAxis("Horizontal");
+        
             if (stunTimer > 0f)
             {
                 horizontalInput = 0f; // can't move if stunned
@@ -380,12 +377,11 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             if (horizontalInput != 0)
             {
                 animator.SetBool("isWalking", true);
-                isWalking = true;
+                
             }
             else
             {
                 animator.SetBool("isWalking", false);
-                isWalking = false;
             }
             characterController.Move(movement * Time.deltaTime * moveSpeed);
         }
@@ -537,6 +533,15 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 
     void Attack(string attackType)
     {
+        float horizontalInput = Input.GetAxis("Horizontal");
+        if (horizontalInput != 0)
+        {
+            isWalking = true;
+        }
+        else
+        {
+            isWalking = false;
+        }
         if (attackType == "light")
         {
             if (isCrouched)
