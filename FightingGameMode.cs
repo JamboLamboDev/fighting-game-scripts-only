@@ -30,6 +30,8 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
     private int p2Wins = 0;
     private int p1matchWins = 0;
     private int p2matchWins = 0;
+    public RawImage[] player1Icons;
+    public RawImage[] player2Icons;
     public ValBar P1HPBar;
     public ValBar P2HPBar;
     public ValBar P1GuardBar;
@@ -63,7 +65,7 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
         player1Ref = PhotonNetwork.MasterClient;
         StartCoroutine(GetNicknames());
         StartCoroutine(GameLoop());
-        
+
     }
 
     [PunRPC]
@@ -72,7 +74,7 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
         roundText.text = text;
     }
 
-    
+
 
     [PunRPC]
     void RPC_UpdateTimerText(string text)
@@ -124,6 +126,7 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
             player2 = P2.GetComponent<FightingPlayerController>();
             player1.photonView.TransferOwnership(player1Ref);
             player2.photonView.TransferOwnership(player2Ref);
+            photonView.RPC("RPC_ResetIcons", RpcTarget.All);
 
 
             if (P1 != null)
@@ -170,6 +173,8 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
         Debug.Log("Setting our bars...");
         player1.SetBars(P1HPBar, P1GuardBar, P1SpeBar, p1SpecialMeterText, p1comboCount);
         player2.SetBars(P2HPBar, P2GuardBar, P2SpeBar, p2SpecialMeterText, p2comboCount);
+        player1.icons = player1Icons;
+        player2.icons = player2Icons;
         if (PhotonNetwork.IsMasterClient)
         {
             Debug.Log("Setting Wins...");
@@ -206,7 +211,7 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
                 secondPassed = 0f;
             }
 
- 
+
 
             if (player1.health <= 0 || player2.health <= 0 || currentTime <= 0)
             {
@@ -280,7 +285,8 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
         }
     }
 
-    IEnumerator GetNicknames() {
+    IEnumerator GetNicknames()
+    {
         yield return new WaitUntil(() => PhotonNetwork.PlayerList.Length == 2);
         foreach (Player player in PhotonNetwork.PlayerList)
         {
@@ -441,5 +447,20 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
         }
         winCountText.text = player1matchWins.ToString() + " | " + player2matchWins.ToString();
     }
-    
+    [PunRPC]
+    public void RPC_ResetIcons() //lowers the opacity of icons to a low value
+    {
+        foreach (RawImage icon in player1Icons)
+        {
+            Color tempColor = icon.color;
+            tempColor.a = 0.2f; // Set low opacity
+            icon.color = tempColor;
+        }
+        foreach (RawImage icon in player2Icons)
+        {
+            Color tempColor = icon.color;
+            tempColor.a = 0.2f; // Set low opacity
+            icon.color = tempColor;
+        }
+    }
 }
