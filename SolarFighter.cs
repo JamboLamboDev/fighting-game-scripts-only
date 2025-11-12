@@ -149,7 +149,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
     public void healSuccess()
     {
         EndAttack();
-        photonView.RPC("RPC_SetStatusEffect", photonView.Owner, "heal", 10f);
+        SetStatusEffect("heal", 10f);
     }
 
 }

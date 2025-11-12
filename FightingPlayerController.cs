@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
+using UnityEngine.UI;
 using TMPro;
 using System.Collections.Concurrent;
 public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
@@ -77,11 +78,18 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 
     //-------------------------------------------------------- Status Effects ------------------------------------------
     public float healTimer;
+    public bool isHealing;
     public float dotTimer;  // for generic damage over time effects such as acid or fire and such.
+    public bool isDot;
     public float slowTimer; //slow effects like ice, slows movement
+    public bool isSlowed;
     public float shockTimer;//extra damage when hit
+    public bool isShocked;
     public float weaknessTimer;
+    public bool isWeakened;
     public bool isAfflicted; //does the player have a status effect
+    public RawImage[] icons;
+    public bool statusIconActive; // active if at least one icon is on.
     public ParticleSystem[] particles; //particles for status effects
     //--------------------------------------------------------- Methods ---------------------------------------------------
 
@@ -479,7 +487,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                     TakeKnockback(knockbackForce, false);
                     if (attackProperty == "statusEffect" || attackProperty2 == "statusEffect")
                     {
-                        photonView.RPC("RPC_SetStatusEffect", photonView.Owner, attackStatusEffect,attackStatusEffectDur);
+                        SetStatusEffect(attackStatusEffect, attackStatusEffectDur);
                     }
                 }
 
@@ -851,16 +859,56 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             photonView.RPC("RPC_EndGuardBreakAttack", RpcTarget.All);
         }
     }
+    [PunRPC]
+    public void RPC_ResetIcons() //lowers the opacity of icons to a low value
+    {
+        foreach (RawImage icon in icons)
+        {
+            Color tempColor = icon.color;
+            tempColor.a = 0.2f; // Set low opacity
+            icon.color = tempColor;
+        }
+    }
+    [PunRPC]
+    public void RPC_ResetIcon(int index) //lowers the opacity of icons to a low value
+    {
+        if (index < 0 || index >= icons.Length)
+        {
+            return; // Index out of bounds check
+        }
+        Color tempColor = icons[index].color;
+        tempColor.a = 0.2f; // Set full opacity
+        icons[index].color = tempColor;
+        
+    }
 
- [PunRPC]
-    public void RPC_SetStatusEffect(string statusEffect, float duration)
+    [PunRPC]
+    public void RPC_UpdateIcon(int index) //sets the opacity of the icon at the given index to full opacity
+    {
+        if (index < 0 || index >= icons.Length)
+        {
+            return; // Index out of bounds check
+        }
+        Color tempColor = icons[index].color;
+        tempColor.a = 1f; // Set full opacity
+        icons[index].color = tempColor;
+    }
+    public void SetStatusEffect(string statusEffect, float duration)
     {
         isAfflicted = true; // guaranteed affliction when this is called
-        PlayParticleSystem(1); //debuff
+        statusIconActive = true;
+        if (statusEffect != "heal")
+        {
+            PlayParticleSystem(1); //debuff
+        }
+       
 
         switch (statusEffect)
         {
             case "heal":
+                photonView.RPC("RPC_UpdateIcon", RpcTarget.All, 1);
+                isHealing = true;
+                PlayParticleSystem(2); //heal
                 if (healTimer < duration)
                 {
                     healTimer = duration;
@@ -874,6 +922,8 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                 break;
 
             case "dot":
+                isDot = true;
+                photonView.RPC("RPC_UpdateIcon", RpcTarget.All, 2);
                 if (dotTimer < duration)
                 {
                     dotTimer = duration;
@@ -887,6 +937,8 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                 break;
 
             case "slow":
+                isSlowed = true;
+                photonView.RPC("RPC_UpdateIcon", RpcTarget.All, 4);
                 if (slowTimer < duration)
                 {
                     slowTimer = duration;
@@ -895,6 +947,8 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                 break;
 
             case "shock":
+                isShocked = true;
+                photonView.RPC("RPC_UpdateIcon", RpcTarget.All, 3);
                 if (shockTimer < duration)
                 {
                     shockTimer = duration;
@@ -902,6 +956,8 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                 break;
 
             case "weakness":
+                isWeakened = true;
+                photonView.RPC("RPC_UpdateIcon", RpcTarget.All, 5);
                 if (weaknessTimer < duration)
                 {
                     weaknessTimer = duration;
@@ -919,26 +975,25 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     {
         isAfflicted = false; // set true if still afflicted, afflicted triggers this function.
         if (healTimer > 0f)
-        {// healing removes debuffs.
-            dotTimer = 0f;
-            slowTimer = 0f;
-            shockTimer = 0f;
-            weaknessTimer = 0f;
+        {// healing pauses debuffs while ongoing.
+            dotTimer -= Time.deltaTime;
+            slowTimer -= Time.deltaTime;
+            shockTimer -= Time.deltaTime;
+            weaknessTimer -= Time.deltaTime;
             healTimer -= Time.deltaTime;
             health += 3f * Time.deltaTime; // regen effect
             healthBar.SetVal(health);
             isAfflicted = true;
-
-            if (particles[2].isPlaying == false)
-            {
-                PlayParticleSystem(2); //heal
-            } else if (particles[1].isPlaying == true)
-            {
-                StopParticleSystem(1); //stop debuff if healing
-            }
-
         } else // check debuffs since heals cleanses player
         {
+            if (isHealing)
+            {
+                StopParticleSystem(1); //stop debuff if healing
+                photonView.RPC("RPC_ResetIcon", RpcTarget.All, 1);
+                isHealing = false;
+                healTimer = 0;
+            }
+            
             if (particles[1].isPlaying == false)
             {
                 PlayParticleSystem(1); //debuff
@@ -946,37 +1001,46 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             
             if (dotTimer > 0f)
             {
-                dotTimer -= Time.deltaTime;
                 health -= 3f * Time.deltaTime;
                 healthBar.SetVal(health);
+                dotTimer -= Time.deltaTime;
                 isAfflicted = true;
-
+            } else if (isDot){
+                photonView.RPC("RPC_ResetIcon", RpcTarget.All, 2);
+                isDot = false;
             }
 
             if (slowTimer > 0f)
             {
                 slowTimer -= Time.deltaTime;
-                if (slowTimer <= 0f) //checks here since timer is decremented earlier
-                {
-                    moveSpeed = defaultMoveSpeed;// resets speed back to normal when slow ends. speed is changed when inflicted only.
-                }
-                else
-                {
-                    isAfflicted = true;
-                }
+                isAfflicted = true;
+            } else if (isSlowed)
+            {
+                moveSpeed = defaultMoveSpeed;// resets speed back to normal when slow ends. speed is changed when inflicted only.
+                photonView.RPC("RPC_ResetIcon", RpcTarget.All, 4);
+                isSlowed = false;
             }
             
             if (shockTimer > 0f)
             {
                 shockTimer -= Time.deltaTime;
                 isAfflicted = true;
+                
+            } else if (isShocked)
+            {
+                photonView.RPC("RPC_ResetIcon", RpcTarget.All, 3);
+                isShocked = false;
             }
             
             if (weaknessTimer > 0f)
             {
                 weaknessTimer -= Time.deltaTime;
                 isAfflicted = true;
-            } 
+            }  else if (isWeakened)
+            {
+                photonView.RPC("RPC_ResetIcon", RpcTarget.All, 5);
+                isWeakened = false;
+            }
         }
         
     }
