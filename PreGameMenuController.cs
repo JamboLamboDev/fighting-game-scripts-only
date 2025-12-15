@@ -83,6 +83,12 @@ public class PreGameMenuController : MonoBehaviourPunCallbacks//menu that deals 
         }
         //
     }
+
+    public void selectRandomChar()
+    {
+        int selectChar = Random.Range(0,previewChars.Length);
+        selectCharacter(selectChar);
+    }
     
     public void readyUp()
     {

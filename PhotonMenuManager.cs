@@ -24,11 +24,11 @@ public class PhotonMenuManager : MonoBehaviourPunCallbacks
             nameDisplay.text = savedName;
             PhotonNetwork.NickName = savedName;
             Debug.Log("Loaded nickname: " + savedName);
-            currentRoomDisplay.text = "";
+            currentRoomDisplay.text = "Not in a Room";
         }
         else
         {
-            // Give a temporary default name
+            // Give a temporary name
             PhotonNetwork.NickName = "Player_" + Random.Range(1000, 9999);
         }
         // Connect to Photon cloud
@@ -64,7 +64,6 @@ public class PhotonMenuManager : MonoBehaviourPunCallbacks
         string roomName = RoomNameInput.text;
         if (!string.IsNullOrEmpty(roomName))
         {
-            currentRoomDisplay.text = "Currently in Room: " + roomName;
             PhotonNetwork.JoinRoom(roomName);
         }
     }
@@ -77,8 +76,21 @@ public class PhotonMenuManager : MonoBehaviourPunCallbacks
     public override void OnJoinedRoom()
     {
         Debug.Log("Joined Room!");
+        currentRoomDisplay.text = "Currently in Room: " + PhotonNetwork.CurrentRoom.Name;
+        
         //
 
+    }
+
+    public void LeaveRoom()
+    {
+        PhotonNetwork.LeaveRoom();
+        currentRoomDisplay.text = "Not in a Room";
+    }
+
+    public void QuitGame()
+    {
+        Application.Quit();
     }
 
     public override void OnPlayerEnteredRoom(Player newPlayer)

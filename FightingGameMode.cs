@@ -56,6 +56,11 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
     public GameObject EndGameScreen;
     private bool player1Ready = false;
     private bool player2Ready = false;
+    public AudioSource sfxSource;
+    public AudioSource bgmSource;
+    public AudioClip matchBGM; //plays during the match
+    public AudioClip matchEndBGM; //plays when match is finished, while endgame screen is shown.
+    public AudioClip[] audioAnnouncerClips; // round start, fight, etc TODO!!!!!!
 
 
 
@@ -84,6 +89,8 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
 
     IEnumerator GameLoop()
     {
+        bgmSource.clip = matchBGM; //set the bgm to match music
+        bgmSource.Play();
         yield return StartCoroutine(RoundStart());
         yield return StartCoroutine(RoundActive());
         yield return StartCoroutine(RoundEnd());
@@ -423,6 +430,8 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
     }
     IEnumerator RPC_EndGameCoroutine(int player1Wins, int player1matchWins, int player2matchWins)
     {
+        bgmSource.clip = matchEndBGM; //set the bgm to match music
+        bgmSource.Play();
         roundText.text = "Match Over!";
         yield return new WaitForSeconds(3f);
         hud.SetActive(false);

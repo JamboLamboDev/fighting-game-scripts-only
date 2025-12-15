@@ -8,14 +8,15 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
     void Awake() //set character specific stats
     {
         maxHealth = 100f; //default hp
-        jumpStrengthMult = 1.4f; //agile jump
+        jumpStrengthMult = 1.2f; //agile jump
         health = maxHealth;
         moveSpeed = 1.6f; //slightly slow
         maxBlockMeter = 60f; //weak block because zoner
         blockMeter = maxBlockMeter;
         blockRegenRate = 3f; //worse regen but stronger block, focus on aggresion after getting an opening
-        gravityScale = 0.3f; //good aerial control
+        gravityScale = 0.25f; //good aerial control
         maxSpecialMeter = 200f;  //can save more special for projectiles
+        specialMeterRate = 5f; // INCREDIBLY FAST special meter gain
         specialMeter = 0f;
         crouchedSpecialCost = 20f;
         aerialSpecialCost = 10f;
@@ -29,7 +30,6 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
     public override void NeutralLightAttack() //data for attack
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 5f;
         currentAttackStun = 1f;
         currentAttackProperty = "n/a";
@@ -44,7 +44,6 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
     public override void NeutralHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 10f;
         currentAttackStun = 1.2f;
         currentAttackProperty = "n/a";
@@ -58,7 +57,6 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
     {
 
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 20f;
         currentAttackStun = 2.2f;
         currentAttackProperty = "high";
@@ -72,7 +70,6 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
     public override void CrouchedLightAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 10f;
         currentAttackStun = 2f;
         currentAttackProperty = "launch";
@@ -86,7 +83,6 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
     public override void CrouchedHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 15f;
         currentAttackStun = 3.5f;
         currentAttackProperty = "low";
@@ -99,7 +95,6 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
     public override void CrouchedSpecialAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 10f;
         currentAttackStun = 6f;
         currentAttackProperty = "knockdown";
@@ -112,7 +107,6 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
     public override void AerialLightAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 10f;
         currentAttackStun = 3f;
         currentAttackProperty = "high";
@@ -124,7 +118,6 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
     public override void AerialHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 20f;
         currentAttackStun = 1f;
         currentAttackProperty = "high";
@@ -147,7 +140,6 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
     public override void ForwardLightAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 5f;
         currentAttackStun = 1f;
         currentAttackProperty = "n/a";
@@ -159,7 +151,6 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
     public override void ForwardHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 20f;
         currentAttackStun = 6f;
         currentAttackProperty = "high"; //overhead attack
@@ -175,7 +166,6 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
     {
         photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Counter");
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 40f;
         currentAttackStun = 6f;
         currentAttackProperty = "unblockable";
@@ -184,6 +174,24 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0f;
         
+    }
+
+    public void smokeBomb()//unique move, teleports up and becomes intangible, called in animation event
+    {
+        PlayParticleSystem(5);
+        DisableAllHurtboxes();
+        Vector3 teleportPosition = transform.position + new Vector3(0, 3f, 0);
+        transform.position = teleportPosition;
+        gravityScale = -0.1f;
+        
+    } 
+
+    public void EndSmoke()
+    {
+        EnableAllHurtboxes();
+        StopParticleSystem(5);
+        CancellableMove();
+        gravityScale = 0.25f;
     }
 
 }

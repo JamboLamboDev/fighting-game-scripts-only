@@ -17,6 +17,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
         gravityScale = 0.5f; //heavy gravity because full armor
         maxSpecialMeter = 150f; //can save more special for heals but can't build it faster
         specialMeter = 0f;
+        specialMeterRate = 1f;
         crouchedSpecialCost = 60f;//heal
         aerialSpecialCost = 0f; //none, can't do aerial attacks 
         neutralSpecialCost = 30f;//slash
@@ -29,7 +30,6 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
     public override void NeutralLightAttack() //data for attack
     {
         isInAttack = true;
-        notCancellable = false;
         currentAttackDamage = 5f;
         currentAttackStun = 1f;
         currentAttackProperty = "n/a";
@@ -44,7 +44,6 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
     public override void NeutralHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 10f;
         currentAttackStun = 1.2f;
         currentAttackProperty = "n/a";
@@ -58,7 +57,6 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
     {
 
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 20f;
         currentAttackStun = 2.2f;
         currentAttackProperty = "high";
@@ -72,7 +70,6 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
     public override void CrouchedLightAttack()
     {
         isInAttack = true;
-        notCancellable = false;
         currentAttackDamage = 10f;
         currentAttackStun = 2f;
         currentAttackProperty = "hardknockdown";
@@ -86,13 +83,11 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
     public override void CrouchedHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = false;
         stunTimer = 1f;
     }
     public override void CrouchedSpecialAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         stunTimer = 0.5f;
     }
     public override void AerialLightAttack()
@@ -110,7 +105,6 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
     public override void ForwardLightAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 5f;
         currentAttackStun = 1f;
         currentAttackProperty = "n/a";
@@ -122,7 +116,6 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
     public override void ForwardHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 20f;
         currentAttackStun = 6f;
         currentAttackProperty = "n/a"; //overhead attack
@@ -136,7 +129,6 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
     {
         photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Counter");
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 40f;
         currentAttackStun = 6f;
         currentAttackProperty = "unblockable";
