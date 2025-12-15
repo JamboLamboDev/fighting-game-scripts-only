@@ -17,9 +17,10 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
         gravityScale = 0.4f; //normal gravity
         maxSpecialMeter = 100f; //regular special meter cap
         specialMeter = 100f; //starts with full special meter to encourage aggressive playstyle
+        specialMeterRate = 3f;
         crouchedSpecialCost = 40f; //roar attack that buffs and does pressure
-        aerialSpecialCost = 40f; //weak aerial, but character is focused on ground aggression
-        neutralSpecialCost = 30f; //high damage and combo
+        aerialSpecialCost = 20f; //closer
+        neutralSpecialCost = 30f; //combo and move closer.
         stunTimer = 0.5f;
 
     }
@@ -29,7 +30,6 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
     public override void NeutralLightAttack() //data for attack
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 5f;
         currentAttackStun = 1f;
         currentAttackProperty = "n/a";
@@ -44,7 +44,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
     public override void NeutralHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = true;
+        
         currentAttackDamage = 10f;
         currentAttackStun = 1.2f;
         currentAttackProperty = "n/a";
@@ -58,7 +58,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
     {
 
         isInAttack = true;
-        notCancellable = true;
+        
         currentAttackDamage = 20f;
         currentAttackStun = 2.2f;
         currentAttackProperty = "high";
@@ -72,7 +72,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
     public override void CrouchedLightAttack()
     {
         isInAttack = true;
-        notCancellable = true;
+        
         currentAttackDamage = 10f;
         currentAttackStun = 2f;
         currentAttackProperty = "launch";
@@ -86,7 +86,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
     public override void CrouchedHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = true;
+        
         currentAttackDamage = 15f;
         currentAttackStun = 3.5f;
         currentAttackProperty = "low";
@@ -99,7 +99,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
     public override void CrouchedSpecialAttack()
     {
         isInAttack = true;
-        notCancellable = true;
+        
         currentAttackDamage = 10f;
         currentAttackStun = 6f;
         currentAttackProperty = "knockdown";
@@ -112,7 +112,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
     public override void AerialLightAttack()
     {
         isInAttack = true;
-        notCancellable = true;
+        
         currentAttackDamage = 10f;
         currentAttackStun = 3f;
         currentAttackProperty = "high";
@@ -124,7 +124,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
     public override void AerialHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = true;
+        
         currentAttackDamage = 20f;
         currentAttackStun = 1f;
         currentAttackProperty = "high";
@@ -147,7 +147,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
     public override void ForwardLightAttack()
     {
         isInAttack = true;
-        notCancellable = true;
+        
         currentAttackDamage = 5f;
         currentAttackStun = 1f;
         currentAttackProperty = "n/a";
@@ -159,7 +159,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
     public override void ForwardHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = true;
+        
         currentAttackDamage = 20f;
         currentAttackStun = 6f;
         currentAttackProperty = "high"; //overhead attack
@@ -175,7 +175,6 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
     {
         photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Counter");
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 40f;
         currentAttackStun = 6f;
         currentAttackProperty = "unblockable";
@@ -184,6 +183,13 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0f;
         
+    }
+
+    public void roarTick() //called by anim multiple times
+    {
+        stunTimer =3f;
+        health -= 3f;
+        opponent.photonView.RPC("RPC_TakeDamage",opponent.photonView.Owner,3f,3f,"unblockable","n/a",4f,4f,"n/a",0f);
     }
 
 }

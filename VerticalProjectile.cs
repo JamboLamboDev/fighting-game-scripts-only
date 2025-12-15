@@ -13,7 +13,6 @@ public class VerticalProjectile : MovingProjectile //projectile that spawns a se
     {
         photonView = GetComponent<PhotonView>();
         attackHitbox = GetComponentInChildren<ProjHitbox>();
-        transform.position += moveDirection.normalized * projSpaceFromOwner; //spawn a certain extra distance away from owner
     }
 
 
@@ -28,8 +27,8 @@ public class VerticalProjectile : MovingProjectile //projectile that spawns a se
         {
             moveDirection = Vector3.down;
         }
-
-        transform.position += dir.normalized * projSpaceFromOwner;
+        transform.position += projectileVerticleOffset;//apply offset
+        transform.position += dir.normalized * projSpaceFromOwner;//space from owner
         attackHitbox.gameObject.layer = playerLayerMask; //needs to be on right layer
     }
 }

@@ -15,8 +15,9 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
         blockMeter = maxBlockMeter;
         blockRegenRate = 3f; //worse regen but stronger block, focus on aggresion after getting an opening
         gravityScale = 0.4f;
-        maxSpecialMeter = 60f; //zlorp has a low special meter cap, but cheap specials to keep an aggresive playstyle
+        maxSpecialMeter = 60f; //zlorp has a low special meter cap, but cheap specials to keep an aggresive playstyle, cant save
         specialMeter = 0f;
+        specialMeterRate = 2f; //faster special meter rate to spam specials more often
         crouchedSpecialCost = 20f;
         aerialSpecialCost = 10f;
         neutralSpecialCost = 20f;
@@ -29,7 +30,6 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
     public override void NeutralLightAttack() //data for attack
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 5f;
         currentAttackStun = 1f;
         currentAttackProperty = "n/a";
@@ -44,7 +44,7 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
     public override void NeutralHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = true;
+        
         currentAttackDamage = 10f;
         currentAttackStun = 1.2f;
         currentAttackProperty = "n/a";
@@ -58,7 +58,7 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
     {
 
         isInAttack = true;
-        notCancellable = true;
+        
         currentAttackDamage = 20f;
         currentAttackStun = 2.2f;
         currentAttackProperty = "high";
@@ -72,7 +72,7 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
     public override void CrouchedLightAttack()
     {
         isInAttack = true;
-        notCancellable = true;
+        
         currentAttackDamage = 10f;
         currentAttackStun = 2f;
         currentAttackProperty = "launch";
@@ -86,7 +86,7 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
     public override void CrouchedHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = true;
+        
         currentAttackDamage = 15f;
         currentAttackStun = 3.5f;
         currentAttackProperty = "low";
@@ -99,7 +99,7 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
     public override void CrouchedSpecialAttack()
     {
         isInAttack = true;
-        notCancellable = true;
+        
         currentAttackDamage = 10f;
         currentAttackStun = 6f;
         currentAttackProperty = "knockdown";
@@ -112,7 +112,7 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
     public override void AerialLightAttack()
     {
         isInAttack = true;
-        notCancellable = true;
+        
         currentAttackDamage = 10f;
         currentAttackStun = 3f;
         currentAttackProperty = "high";
@@ -124,7 +124,7 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
     public override void AerialHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = true;
+        
         currentAttackDamage = 20f;
         currentAttackStun = 1f;
         currentAttackProperty = "high";
@@ -147,7 +147,7 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
     public override void ForwardLightAttack()
     {
         isInAttack = true;
-        notCancellable = true;
+        
         currentAttackDamage = 5f;
         currentAttackStun = 1f;
         currentAttackProperty = "n/a";
@@ -159,7 +159,7 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
     public override void ForwardHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = true;
+        
         currentAttackDamage = 20f;
         currentAttackStun = 6f;
         currentAttackProperty = "high"; //overhead attack
@@ -175,7 +175,7 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
     {
         photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Counter");
         isInAttack = true;
-        notCancellable = true;
+        
         currentAttackDamage = 40f;
         currentAttackStun = 6f;
         currentAttackProperty = "unblockable";

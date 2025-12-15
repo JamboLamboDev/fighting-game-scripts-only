@@ -17,6 +17,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         gravityScale = 0.3f;//slightly lower gravity for better aerial control
         maxSpecialMeter = 100f; //average special meter
         specialMeter = 0f;
+        specialMeterRate = 1f; // average special meter gain
         crouchedSpecialCost = 20f; //cheap cc mixup
         aerialSpecialCost = 40f; // strong aerial attack at a reasonable cost
         neutralSpecialCost = 40f;// relatively cheap neutral special that is a counter, to give a strong tool to allow for defensive play if needed, which grants better adaptability
@@ -29,7 +30,6 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     public override void NeutralLightAttack() //data for attack
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 5f;
         currentAttackStun = 1f;
         currentAttackProperty = "n/a";
@@ -44,7 +44,6 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     public override void NeutralHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 10f;
         currentAttackStun = 1.2f;
         currentAttackProperty = "n/a";
@@ -58,14 +57,12 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     {
 
         isInAttack = true;
-        notCancellable = true;
         stunTimer = 100f;
         
     }
     public override void CrouchedLightAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 10f;
         currentAttackStun = 2f;
         currentAttackProperty = "launch";
@@ -79,7 +76,6 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     public override void CrouchedHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 15f;
         currentAttackStun = 3.5f;
         currentAttackProperty = "low";
@@ -92,7 +88,6 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     public override void CrouchedSpecialAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 10f;
         currentAttackStun = 6f;
         currentAttackProperty = "knockdown";
@@ -105,7 +100,6 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     public override void AerialLightAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 10f;
         currentAttackStun = 3f;
         currentAttackProperty = "high";
@@ -117,7 +111,6 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     public override void AerialHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 20f;
         currentAttackStun = 1f;
         currentAttackProperty = "high";
@@ -140,7 +133,6 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     public override void ForwardLightAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 5f;
         currentAttackStun = 1f;
         currentAttackProperty = "n/a";
@@ -152,7 +144,6 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     public override void ForwardHeavyAttack()
     {
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 20f;
         currentAttackStun = 6f;
         currentAttackProperty = "high"; //overhead attack
@@ -168,7 +159,6 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
     {
         photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Counter");
         isInAttack = true;
-        notCancellable = true;
         currentAttackDamage = 40f;
         currentAttackStun = 6f;
         currentAttackProperty = "unblockable";

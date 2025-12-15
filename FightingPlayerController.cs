@@ -6,9 +6,10 @@ using Photon.Realtime;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Concurrent;
+
 public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 {
-    FightingPlayerController opponent;  //find in start, used to face
+    public FightingPlayerController opponent;  //find in start, used to face
     public Collider[] hitboxes; // array of hitbox colliders
     public Collider[] hurtboxes; // array of hurtbox colliders
     [SerializeField] private string[] projectilePrefabLocations;
@@ -40,6 +41,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     private float stunScale; // scales stun duration based on combo count
     public float specialMeter;
     public float maxSpecialMeter;
+    public float specialMeterRate; // rate of passive special meter gain
     public bool isInAttack;//to track current attack state
     public float crouchedSpecialCost; // changed in child class to set character specific costs
     public float aerialSpecialCost;
@@ -59,7 +61,6 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public bool hasbeenGuardBroken; //to prevent multiple gb hits in one attack
     public bool FacingRight = true;
     public bool isInCounter = false;
-    public bool notCancellable; //for attacks to cancel early.
     public BlockSFX blockEffect; // block effect.
     public PhotonView photonView; // to identify owner.
     private Coroutine doKnockback; // called when taking damage to execute knockback 
@@ -75,6 +76,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     [SerializeField] private Color guardBreakColor;
     private Color[] defaultColors;
     private Material[] cachedMaterials;
+    public bool guardBreakSFXOn;
 
     //-------------------------------------------------------- Status Effects ------------------------------------------
     public float healTimer;
@@ -91,6 +93,18 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public RawImage[] icons;
     public bool statusIconActive; // active if at least one icon is on.
     public ParticleSystem[] particles; //particles for status effects
+    //-------------------------------------------------------------- Audio ------------------------------------------------
+    public AudioSource audioSource;
+    public AudioClip[] audioGenSFX; //called by ID, generic sounds that are not character specific
+    public AudioClip[] attackSFX; // 0 NL, 1 NH, 2 NS, 3 FL, 4 FH, 5 CL, 6 CH, 7 CS, 8 AL, 9 AH, 10 AS, 11 GB Attack
+    public AudioClip[] damageSFX; // 0 light, 1 medium, 2 heavy, 3 blocked attacks.
+
+    public enum clipType //used to identify which audioclip array to use.
+    {
+        Generic,
+        Attack,
+        Damage
+    }
     //--------------------------------------------------------- Methods ---------------------------------------------------
 
 
@@ -152,6 +166,12 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     {
         if (isGuardBreakAttacking)
         {
+            if (!guardBreakSFXOn)
+            {
+                PlayParticleSystem(4); //gb aura is always 4 in the array.
+                Debug.Log("Guard Break SFX On");
+                guardBreakSFXOn = true;
+            }
             float lerp = (Mathf.Sin(Time.time * 7f) + 1f) / 2f;
             for (int i = 0; i < cachedMaterials.Length; i++)
             {
@@ -161,9 +181,13 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         }
         else
         {
-            for (int i = 0; i < cachedMaterials.Length; i++)
-            {
-                cachedMaterials[i].color = defaultColors[i];
+            if (guardBreakSFXOn){
+                for (int i = 0; i < cachedMaterials.Length; i++)
+                {
+                    cachedMaterials[i].color = defaultColors[i];
+                }
+                guardBreakSFXOn = false;
+                StopParticleSystem(4);
             }
         }
         
@@ -287,7 +311,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             DisableAllHitboxes();
             EnableAllHurtboxes();
         }
-        specialMeter += 0.5f * Time.deltaTime; // slowly gain special meter over time
+        specialMeter += 0.5f * Time.deltaTime * specialMeterRate; // slowly gain special meter over time
 
         if (!isBlocking && blockMeter < maxBlockMeter && Time.time - lastBlockTime > 2f) //regen block meter if not blocking and after delay
         {
@@ -406,7 +430,6 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         if (isInAttack) // if hit during own attack, it's a counter hit
         {
             isInAttack = false; // cancel attack if hit
-            notCancellable = false; //animation cancel
             damage *= 1.4f; // take extra damage when counter hit
             stunDuration *= 1.4f;
             //play counter hit sound/animation
@@ -465,10 +488,21 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                 {
                     damageScale *= 1.5f; //50% extra damage taken
                 }
-
-                health -= damage * damageScale;
+                float finalDamage = damage * damageScale;
+                health -= finalDamage;
                 stunTimer = stunDuration * stunScale;
                 specialMeter += damage * 0.5f; // gain special meter when taking damage
+                if (finalDamage > 20f)
+                {
+                    playDamageSound(2); // heavy damage sound
+                } else if (finalDamage > 10f)
+                {
+                    playDamageSound(1); // medium damage sound
+                }
+                else
+                {
+                    playDamageSound(0); // light damage sound
+                }
 
                 if (attackProperty == "launch" || attackProperty2 == "launch")
                 {
@@ -645,6 +679,69 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             }
         }
     }
+    // Sounds
+    public void playAttackSound(int id) //called by anim event usually.
+    {
+        if (!photonView.IsMine) return; //only owner calls.
+        if (id < 0 || id >= attackSFX.Length)
+        {
+            Debug.LogWarning("Invalid attack sound ID: " + id);
+            return;
+        }
+        photonView.RPC("RPC_PlaySound", RpcTarget.All, id, clipType.Attack);
+    }
+
+    public void playDamageSound(int id) //called by take damage usually.
+    {
+        if (!photonView.IsMine) return; //only owner calls.
+        if (id < 0 || id >= damageSFX.Length)
+        {
+            Debug.LogWarning("Invalid damage sound ID: " + id);
+            return;
+        }
+        photonView.RPC("RPC_PlaySound", RpcTarget.All, id, clipType.Damage);
+    }
+
+    public void playGenericSound(int id) //called by various events
+    {
+        if (!photonView.IsMine) return;
+        if (id < 0 || id >= audioGenSFX.Length)
+        {
+            Debug.LogWarning("Invalid generic sound ID: " + id);
+            return;
+        }
+        photonView.RPC("RPC_PlaySound", RpcTarget.All, id, clipType.Generic);
+    }
+
+    [PunRPC]
+    public void RPC_PlaySound(int clipID,clipType type) //called whenever a sound is played so both players hear it.
+    {
+        if (!audioSource)
+        {
+            Debug.LogWarning("No audio source Found!!!");
+            return;
+        }
+        AudioClip clipToPlay = null;
+        switch (type)
+        {
+            case clipType.Generic:
+                if (clipID >= 0 && clipID < audioGenSFX.Length)
+                    clipToPlay = audioGenSFX[clipID];
+                break;
+            case clipType.Attack:
+                if (clipID >= 0 && clipID < attackSFX.Length)
+                    clipToPlay = attackSFX[clipID];
+                break;
+            case clipType.Damage:
+                if (clipID >= 0 && clipID < damageSFX.Length)
+                    clipToPlay = damageSFX[clipID];
+                break;
+        }
+        if (clipToPlay != null)
+        {
+            audioSource.PlayOneShot(clipToPlay);
+        }
+    }
 
     // Hitbox and Hurtbox Management - called by animation events -- MESSY SINCE PHOTON ADDED
 
@@ -655,7 +752,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             hitboxes[index].enabled = true;
     }
 
-        public void EnableHitbox(int index)
+    public void EnableHitbox(int index)
     {
         photonView.RPC("RPC_EnableHitbox", RpcTarget.All,index);
     }
@@ -716,6 +813,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     {
         photonView.RPC("RPC_DisableAllHurtboxes", RpcTarget.All);
     }
+
     [PunRPC]
     public void RPC_EnableAllHurtboxes()
     {
@@ -746,7 +844,6 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     {
         animator.SetBool("FinisherTriggered", false);
         stunTimer = 0f; //end stun on finisher hit
-        notCancellable = false;
         if (photonView.IsMine)
         {
             opponent.photonView.RPC("RPC_TakeDamage", opponent.photonView.Owner, 10f, 5f, "unblockable", "knockdown", 3f, 10f, "n/a", 0f); //heavy damage and knockdown on finisher hit
@@ -787,7 +884,6 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             specialBar.SetVal(specialMeter);
             updateSpecialMeterDisplay();
             isInAttack = false; // reset attack state so can only hit once
-            notCancellable = false; //animation cancel
             if (weaknessTimer > 0)
             {
                 currentAttackDamage /= 1.3f; // 30% less damage while weak
@@ -850,7 +946,6 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     {
         isInAttack = false;
         isInCounter = false;
-        notCancellable = false;
         DisableAllHitboxes();
         EnableAllHurtboxes();
         Debug.Log("Attack ended");
@@ -1114,9 +1209,9 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     }
 
     
-    public void CancellableMove() //moves that can be cancellable midway through
+    public void CancellableMove() //called by animation event to make animation cancellable - by letting the player act by resetting stun
     {
-        notCancellable = false; //animation cancel
+        stunTimer = 0;
     }
 
     private void updateSpecialMeterDisplay() //updates special meter text display

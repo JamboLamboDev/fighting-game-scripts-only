@@ -22,6 +22,7 @@ public class DelayedProjectile : Projectile //inherits from Projectile, this is 
     public override void Update()
     {
         if (!photonView.IsMine) return;
+        
         if (ProjectileDelay > 0)
         {
             ProjectileDelay -= Time.deltaTime;
