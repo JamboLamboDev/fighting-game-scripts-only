@@ -60,7 +60,7 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
     public AudioSource bgmSource;
     public AudioClip matchBGM; //plays during the match
     public AudioClip matchEndBGM; //plays when match is finished, while endgame screen is shown.
-    public AudioClip[] audioAnnouncerClips; // round start, fight, etc TODO!!!!!!
+    public AudioClip[] audioAnnouncerClips; // 0: Fight, 1: KO,2 Match Finish 3 Time 4, YOU WIN, 5 YOU LOSE
 
 
 
@@ -195,6 +195,7 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
             yield return new WaitForSeconds(1f);
             player1.photonView.RPC("RPC_SetStun", player1.photonView.Owner, 0f);
             player2.photonView.RPC("RPC_SetStun", player2.photonView.Owner, 0f);
+            photonView.RPC("RPC_PlayAnnouncerClip", RpcTarget.All, 0); //FIGHT
             photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "Match Start!");
             currentTime = roundTime;
             yield return new WaitForSeconds(2f);
@@ -239,12 +240,14 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
                 player1.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "KO");
                 player2.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "KO");
                 photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "Double KO!");
+                photonView.RPC("RPC_PlayAnnouncerClip", RpcTarget.All, 1); //KO
             }
             else if (player1.health <= 0)
             {
                 player1.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "KO");
                 player2.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Victory");
                 photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "Player 2 Wins!");
+                photonView.RPC("RPC_PlayAnnouncerClip", RpcTarget.All, 1); //KO
                 p2Wins++;
             }
             else if (player2.health <= 0)
@@ -252,6 +255,7 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
                 player2.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "KO");
                 player1.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Victory");
                 photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "Player 1 Wins!");
+                photonView.RPC("RPC_PlayAnnouncerClip", RpcTarget.All, 1); //KO
                 p1Wins++;
             }
             else
@@ -262,6 +266,7 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
                     player2.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Defeated");
                     player1.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Victory");
                     photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "Player 1 Wins!");
+                    photonView.RPC("RPC_PlayAnnouncerClip", RpcTarget.All, 3); //time up
                     p1Wins++;
 
 
@@ -271,6 +276,7 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
                     player1.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Defeated");
                     player2.photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Victory");
                     photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "Player 2 Wins!"); ;
+                    photonView.RPC("RPC_PlayAnnouncerClip", RpcTarget.All, 3); //time up
                     p2Wins++;
                 }
             }
@@ -433,6 +439,7 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
         bgmSource.clip = matchEndBGM; //set the bgm to match music
         bgmSource.Play();
         roundText.text = "Match Over!";
+        PlayAnnouncerClip(2); //MATCH FINISH
         yield return new WaitForSeconds(3f);
         hud.SetActive(false);
         EndGameScreen.SetActive(true);
@@ -442,16 +449,25 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
             matchWonText.text = player1Nick + "Survived the Match!";
             if (PhotonNetwork.IsMasterClient)
             {
+                PlayAnnouncerClip(4); //YOU WIN
                 p1matchWins++;
+            }
+            else
+            {
+                PlayAnnouncerClip(5); //YOU LOSE
             }
         }
         else
         {
             player2matchWins++;
             matchWonText.text = player2Nick + "Survived the Match!";
-            if (!PhotonNetwork.IsMasterClient)
+            if (PhotonNetwork.IsMasterClient)
             {
+                PlayAnnouncerClip(5);//YOU lose
                 p2matchWins++;
+            }else
+            {
+                PlayAnnouncerClip(4); //YOU win
             }
         }
         winCountText.text = player1matchWins.ToString() + " | " + player2matchWins.ToString();
@@ -471,5 +487,19 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
             tempColor.a = 0.2f; // Set low opacity
             icon.color = tempColor;
         }
+    }
+
+    public void PlayAnnouncerClip(int clipIndex)
+    {
+        if (clipIndex >= 0 && clipIndex < audioAnnouncerClips.Length)
+        {
+            sfxSource.PlayOneShot(audioAnnouncerClips[clipIndex]);
+        }
+    }
+
+    [PunRPC]
+    public void RPC_PlayAnnouncerClip(int clipIndex)
+    {
+        PlayAnnouncerClip(clipIndex);
     }
 }
