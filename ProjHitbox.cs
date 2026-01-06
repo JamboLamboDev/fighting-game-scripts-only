@@ -7,6 +7,7 @@ using Photon.Realtime;
 public class ProjHitbox : MonoBehaviour
 {
     public Projectile owner;
+    public FightingPlayerController playerOwner;
 
     private void Awake()
     {
@@ -30,7 +31,7 @@ public class ProjHitbox : MonoBehaviour
     public virtual void OnTriggerStay(Collider other) //to double check
     {
         Hurtbox hurtbox = other.GetComponent<Hurtbox>();
-        if (hurtbox != null && hurtbox.owner != owner)
+        if (hurtbox != null && hurtbox.owner != playerOwner) //fixes bug where projectiles could hit their own player owner since projectile owner is not a player
         {
             Debug.Log("Hitbox triggered by " + other.name);
             owner.TargetHit(hurtbox.owner);

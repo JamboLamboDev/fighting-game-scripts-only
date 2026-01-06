@@ -26,7 +26,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
     }
 
     // ---ATTACKS--- in progress
-    // zlorp's attacks are quick and can inflict status effects
+    // her attacks are quick and strong to make up for her lack of defensive options and deals some DOT on some attacks to pressure opponent to finish fight quickly
     public override void NeutralLightAttack() //data for attack
     {
         isInAttack = true;
@@ -54,19 +54,11 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
         stunTimer = 0.5f;
         AttackReward = 6f;
     }
-    public override void NeutralSpecialAttack()
-    {
+    public override void NeutralSpecialAttack() //uses roar tick multiple times instead, therefore empty
+    { 
 
         isInAttack = true;
-        
-        currentAttackDamage = 20f;
-        currentAttackStun = 2.2f;
-        currentAttackProperty = "high";
-        currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 1f;
-        currentAttackBlockStunDuration = 1.2f;
         stunTimer = 0.5f;
-        AttackReward = 6f;
         
     }
     public override void CrouchedLightAttack()

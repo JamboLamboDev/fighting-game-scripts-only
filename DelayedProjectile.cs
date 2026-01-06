@@ -40,8 +40,13 @@ public class DelayedProjectile : Projectile //inherits from Projectile, this is 
     
     public override void SetVar(Vector3 dir,int playerLayerMask)
     {
-        transform.position += dir.normalized * projSpaceFromOwner;
+        transform.position += projectileVerticleOffset;//apply offset
+        transform.position += dir.normalized * projSpaceFromOwner;//set spacing
         attackHitbox.gameObject.layer = playerLayerMask; //needs to be on right layer
+        if (owner != null)
+        {
+            attackHitbox.playerOwner = owner; //set player owner for hit detection
+        }
         
 
     }

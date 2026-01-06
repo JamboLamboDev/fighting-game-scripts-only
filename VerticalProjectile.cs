@@ -30,5 +30,9 @@ public class VerticalProjectile : MovingProjectile //projectile that spawns a se
         transform.position += projectileVerticleOffset;//apply offset
         transform.position += dir.normalized * projSpaceFromOwner;//space from owner
         attackHitbox.gameObject.layer = playerLayerMask; //needs to be on right layer
+        if (owner != null)
+        {
+            attackHitbox.playerOwner = owner; //set player owner for hit detection
+        }
     }
 }
