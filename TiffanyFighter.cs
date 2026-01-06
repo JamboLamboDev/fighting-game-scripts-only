@@ -26,45 +26,31 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
     }
 
     // ---ATTACKS--- in progress
-    // zlorp's attacks are quick and can inflict status effects
-    public override void NeutralLightAttack() //data for attack
+    // tiff has lots of projectiles and zoning options with an invincible CS move to escape from a bad situation
+    public override void NeutralLightAttack() //data for attacK -- slow startup but safe on block and good combo starter
     {
         isInAttack = true;
         currentAttackDamage = 5f;
-        currentAttackStun = 1f;
+        currentAttackStun = 2.3f;
         currentAttackProperty = "n/a";
-        currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 5f;
-        currentAttackBlockStunDuration = 0.5f;
-        stunTimer = 0.2f;
-        AttackReward = 4f;
-
-
-    }
-    public override void NeutralHeavyAttack()
-    {
-        isInAttack = true;
-        currentAttackDamage = 10f;
-        currentAttackStun = 1.2f;
-        currentAttackProperty = "n/a";
-        currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 3f;
-        currentAttackBlockStunDuration = 0.5f;
-        stunTimer = 0.5f;
-        AttackReward = 6f;
-    }
-    public override void NeutralSpecialAttack()
-    {
-
-        isInAttack = true;
-        currentAttackDamage = 20f;
-        currentAttackStun = 2.2f;
-        currentAttackProperty = "high";
         currentAttackProperty2 = "n/a";
         currentAttackKnockbackForce = 1f;
-        currentAttackBlockStunDuration = 1.2f;
-        stunTimer = 0.5f;
-        AttackReward = 6f;
+        currentAttackBlockStunDuration = 1.1f;
+        stunTimer = 1f;
+        AttackReward = 8f;
+
+
+    }
+    public override void NeutralHeavyAttack() //proj
+    {
+        isInAttack = true;
+        stunTimer = 2.5f;
+    }
+    public override void NeutralSpecialAttack() //proj
+    {
+
+        isInAttack = true;
+        stunTimer = 3.5f;
         
     }
     public override void CrouchedLightAttack()
@@ -80,84 +66,59 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
         AttackReward = 8f;
         
     }
-    public override void CrouchedHeavyAttack()
+    public override void CrouchedHeavyAttack() //proj
     {
         isInAttack = true;
-        currentAttackDamage = 15f;
-        currentAttackStun = 3.5f;
-        currentAttackProperty = "low";
-        currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 0.2f;
-        currentAttackBlockStunDuration = 1.5f;
         stunTimer = 2.5f;
-        AttackReward = 6f;
     }
-    public override void CrouchedSpecialAttack()
+    public override void CrouchedSpecialAttack() // INVINCIBLE ESCAPE MOVE
     {
         isInAttack = true;
-        currentAttackDamage = 10f;
-        currentAttackStun = 6f;
-        currentAttackProperty = "knockdown";
-        currentAttackProperty2 = "low";
-        currentAttackKnockbackForce = 0.1f;
-        currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.5f;
-        AttackReward = 4f;
+
     }
     public override void AerialLightAttack()
     {
         isInAttack = true;
         currentAttackDamage = 10f;
-        currentAttackStun = 3f;
+        currentAttackStun = 2f;
         currentAttackProperty = "high";
         currentAttackProperty2 = "n/a";
         currentAttackKnockbackForce = 1f;
-        currentAttackBlockStunDuration = 0.5f;
+        currentAttackBlockStunDuration = 1.5f;
         stunTimer = 1f;
     }
-    public override void AerialHeavyAttack()
+    public override void AerialHeavyAttack()//strong combo start but unsafe on block
     {
         isInAttack = true;
         currentAttackDamage = 20f;
-        currentAttackStun = 1f;
+        currentAttackStun = 4f;
         currentAttackProperty = "high";
         currentAttackProperty2 = "n/a";
         currentAttackKnockbackForce = 3f;
-        currentAttackBlockStunDuration = 0.5f;
+        currentAttackBlockStunDuration = 1.5f;
         stunTimer = 1.5f;
     }
-    public override void AerialSpecialAttack()
+    public override void AerialSpecialAttack() //proj
+    {
+        isInAttack = true;
+        stunTimer = 3f;
+    }
+    public override void ForwardLightAttack() //knockback kick to push enemy away, slow and unsafe but knocks back far and rewarding
     {
         isInAttack = true;
         currentAttackDamage = 10f;
-        currentAttackStun = 5f;
-        currentAttackProperty = "air";
-        currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 5f;
-        currentAttackBlockStunDuration = 3f;
-        stunTimer = 3f;
-    }
-    public override void ForwardLightAttack()
-    {
-        isInAttack = true;
-        currentAttackDamage = 5f;
-        currentAttackStun = 1f;
+        currentAttackStun = 4f;
         currentAttackProperty = "n/a";
         currentAttackProperty2 = "n/a";
-        currentAttackKnockbackForce = 1f;
-        currentAttackBlockStunDuration = 0.5f;
-        stunTimer = 0.5f;
+        currentAttackKnockbackForce = 3f;
+        currentAttackBlockStunDuration = 0.2f; // VERY UNSAFE
+        stunTimer = 2f;
     }
-    public override void ForwardHeavyAttack()
+    public override void ForwardHeavyAttack() //proj
     {
         isInAttack = true;
-        currentAttackDamage = 20f;
-        currentAttackStun = 6f;
-        currentAttackProperty = "high"; //overhead attack
-        currentAttackProperty2 = "knockdown";
-        currentAttackKnockbackForce = 3f;
-        currentAttackBlockStunDuration = 0.5f;
-        stunTimer = 1.5f;
+        stunTimer = 2f;
         
     }
 

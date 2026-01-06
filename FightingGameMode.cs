@@ -178,8 +178,8 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
             yield return null;
         Debug.Log("Both players assigned.");
         Debug.Log("Setting our bars...");
-        player1.SetBars(P1HPBar, P1GuardBar, P1SpeBar, p1SpecialMeterText, p1comboCount);
-        player2.SetBars(P2HPBar, P2GuardBar, P2SpeBar, p2SpecialMeterText, p2comboCount);
+        AssignBars();
+        Debug.Log("Bars Set.");
         player1.icons = player1Icons;
         player2.icons = player2Icons;
         if (PhotonNetwork.IsMasterClient)
@@ -203,8 +203,14 @@ public class FightingGameMode : MonoBehaviourPunCallbacks
             photonView.RPC("RPC_UpdateRoundText", RpcTarget.All, "");
             roundActive = true;
         }
+        
     }
 
+    public void AssignBars()
+    {
+        player1.SetBars(P1HPBar, P1GuardBar, P1SpeBar, p1SpecialMeterText, p1comboCount);
+        player2.SetBars(P2HPBar, P2GuardBar, P2SpeBar, p2SpecialMeterText, p2comboCount);
+    }
     IEnumerator RoundActive() //only host gets access
     {
         float secondPassed = 0f; //otherwise rpc timer text updated too often.

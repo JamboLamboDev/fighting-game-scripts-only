@@ -5,7 +5,7 @@ using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine.UI;
 using TMPro;
-using System.Collections.Concurrent;
+
 
 public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 {
@@ -50,6 +50,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     // Attack properties of current attack //to be set in child class attack functions
     public float currentAttackDamage; // damage of current attack
     public float currentAttackStun; // stun duration of current attack
+    public float currentAttackHitstun = 0.1f; // hitstun duration of current attack - placeholder value is 0.1f
     public string currentAttackProperty; // property of current attack (high, low, launch, knockdown, etc)
     public string currentAttackProperty2;
     public float currentAttackKnockbackForce;
@@ -64,6 +65,8 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public BlockSFX blockEffect; // block effect.
     public PhotonView photonView; // to identify owner.
     private Coroutine doKnockback; // called when taking damage to execute knockback 
+    public Coroutine isHitStun; // called when taking damage to execute hitstun
+
     // ------------------------------------------------------- Bars ----------------------------------------------------
     public ValBar healthBar;
     public ValBar blockBar;
@@ -98,6 +101,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public AudioClip[] audioGenSFX; //called by ID, generic sounds that are not character specific
     public AudioClip[] attackSFX; // 0 NL, 1 NH, 2 NS, 3 FL, 4 FH, 5 CL, 6 CH, 7 CS, 8 AL, 9 AH, 10 AS, 11 GB Attack
     public AudioClip[] damageSFX; // 0 light, 1 medium, 2 heavy, 3 blocked attacks.
+    public bool isPlayingAttackSFX;
 
     public enum clipType //used to identify which audioclip array to use.
     {
@@ -124,6 +128,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         characterRenderers = GetComponentsInChildren<Renderer>();
         cachedMaterials = new Material[characterRenderers.Length];
         defaultColors = new Color[characterRenderers.Length];
+        isPlayingAttackSFX = false;
 
         for (int i = 0; i < characterRenderers.Length; i++)
         {
@@ -492,6 +497,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                 health -= finalDamage;
                 stunTimer = stunDuration * stunScale;
                 specialMeter += damage * 0.5f; // gain special meter when taking damage
+                SetStatusEffect(attackStatusEffect, attackStatusEffectDur);//apply status effect if any
                 if (finalDamage > 20f)
                 {
                     playDamageSound(2); // heavy damage sound
@@ -506,23 +512,21 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 
                 if (attackProperty == "launch" || attackProperty2 == "launch")
                 {
-                    photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Launched"); ; // Play launched animation
+                    photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Launched"); ; // Play launched animation, no hitstun
                     TakeKnockback(knockbackForce, true);
                 }
                 else if (attackProperty == "knockdown" || attackProperty2 == "knockdown")
                 {
                     isKnockedDown = true;
                     photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "HardKnockdown"); // Play knockdown animation
+                    photonView.RPC("RPC_StartHitStun", RpcTarget.All, 0.2f, 0.2f); // hitstun after knockdown animation starts
 
                 }
                 else
                 {
-                    photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"Damaged"); ;
+                    photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"Damaged");
+                    photonView.RPC("RPC_StartHitStun", RpcTarget.All, 0.1f, 0.2f); 
                     TakeKnockback(knockbackForce, false);
-                    if (attackProperty == "statusEffect" || attackProperty2 == "statusEffect")
-                    {
-                        SetStatusEffect(attackStatusEffect, attackStatusEffectDur);
-                    }
                 }
 
             }
@@ -679,7 +683,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             }
         }
     }
-    // Sounds
+    // Sounds and FX
     public void playAttackSound(int id) //called by anim event usually.
     {
         if (!photonView.IsMine) return; //only owner calls.
@@ -737,13 +741,46 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                     clipToPlay = damageSFX[clipID];
                 break;
         }
-        if (clipToPlay != null)
+        if (clipToPlay != null && type != clipType.Attack)
         {
             audioSource.PlayOneShot(clipToPlay);
+        } else if (clipToPlay != null && type == clipType.Attack)
+        {
+            audioSource.clip = clipToPlay;
+            audioSource.Play();
+            isPlayingAttackSFX = true;
         }
     }
 
-    // Hitbox and Hurtbox Management - called by animation events -- MESSY SINCE PHOTON ADDED
+    [PunRPC]
+    public void RPC_StopOngoingAttackSFX()
+    {
+        isPlayingAttackSFX = false;
+        if (audioSource.isPlaying)
+        {
+            audioSource.Stop();
+        }
+    }
+    [PunRPC]
+    public void RPC_StartHitStun(float dur, float delay)
+    {
+        if (isHitStun != null)
+        {
+            StopCoroutine(isHitStun);
+        }
+        isHitStun = StartCoroutine(doHitStun(dur, delay));
+    }
+    private IEnumerator doHitStun(float dur, float delay) //delay is to let certain animations play before hitstun
+    {
+        yield return new WaitForSeconds(delay);
+        float animationSpeed = animator.speed; // store original animation speed
+        animator.speed = 0.1f * (animationSpeed); // slow down animation to simulate hitstun
+        yield return new WaitForSeconds(dur);
+        animator.speed = animationSpeed; // restore original animation speed
+        isHitStun = null;
+    }
+
+    // Hitbox and Hurtbox Management - called by animation events 
 
     [PunRPC]
     public void RPC_EnableHitbox(int index)
@@ -876,10 +913,15 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 
     public void TargetHit(FightingPlayerController target) // called by hitbox when it collides with opponent
     {
+        if (isPlayingAttackSFX)
+        {
+            photonView.RPC("RPC_StopOngoingAttackSFX", RpcTarget.All); //stop attack sound if still playing
+        }
         Debug.Log("Hit registered on " + target.name);
 
         if (isInAttack && target != null) //can only hit once per attack and verify target exists
         {
+            photonView.RPC("RPC_StartHitStun", RpcTarget.All, currentAttackHitstun,0f);//hitstun for impact 
             specialMeter += AttackReward;//bonus special meter from attack.
             specialBar.SetVal(specialMeter);
             updateSpecialMeterDisplay();
@@ -944,6 +986,10 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 
     public void EndAttack() // called at end of attack animation to reset attack state
     {
+        if (isPlayingAttackSFX)
+        {
+            photonView.RPC("RPC_StopOngoingAttackSFX", RpcTarget.All); //stop attack sound if still playing
+        }
         isInAttack = false;
         isInCounter = false;
         DisableAllHitboxes();
@@ -990,7 +1036,9 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     }
     public void SetStatusEffect(string statusEffect, float duration)
     {
+        if (!photonView.IsMine || statusEffect == "n/a" || statusEffect == "" || statusEffect == "none") return; // no status effect to apply
         isAfflicted = true; // guaranteed affliction when this is called
+        Debug.Log($"Applying status effect: {statusEffect} for duration: {duration} to {name}");
         statusIconActive = true;
         if (statusEffect != "heal")
         {
@@ -1004,13 +1052,15 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                 photonView.RPC("RPC_UpdateIcon", RpcTarget.All, 1);
                 isHealing = true;
                 PlayParticleSystem(2); //heal
-                if (healTimer < duration)
+                if (healTimer < duration) 
                 {
+                    health += 1f * healTimer;// heals equal to the weaker application when applying new one, currently 2/3 because healing is less common that dots so less abusable
+                    healthBar.SetVal(health);
                     healTimer = duration;
                 }
                 else
                 {
-                    // Give smaller instant heal if already healing
+                    
                     health += 1f * duration;
                     healthBar.SetVal(health);
                 }
@@ -1021,12 +1071,14 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                 photonView.RPC("RPC_UpdateIcon", RpcTarget.All, 2);
                 if (dotTimer < duration)
                 {
+                    health -= 0.5f * dotTimer; //take some amount of damage equal to the weaker application when applying new one, currently 1/3 but STC, 
+                    healthBar.SetVal(health);
                     dotTimer = duration;
                 }
                 else
                 {
-                    // Give extra damage if already burning
-                    health -= 2f * duration;
+                    // Give extra damage if already under dot as above
+                    health -= 0.5f * duration;
                     healthBar.SetVal(health);
                 }
                 break;
@@ -1037,7 +1089,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                 if (slowTimer < duration)
                 {
                     slowTimer = duration;
-                    moveSpeed *= 0.5f; // needs 'f' since 0.5 is a double literal
+                    moveSpeed *= 0.5f; 
                 }
                 break;
 
@@ -1096,7 +1148,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             
             if (dotTimer > 0f)
             {
-                health -= 3f * Time.deltaTime;
+                health -= 1.5f * Time.deltaTime;
                 healthBar.SetVal(health);
                 dotTimer -= Time.deltaTime;
                 isAfflicted = true;
@@ -1173,10 +1225,9 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     
     private IEnumerator KnockbackMovement(Vector3 velocity)
     {
-        float duration = 0.2f; // how long knockback lasts
         float elapsed = 0f;
 
-        while (elapsed < duration)
+        while (elapsed < 0.2f) //0.2 is dur
         {
             characterController.Move(velocity * Time.deltaTime);
 
@@ -1240,7 +1291,6 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     {
         particles[index].Stop();
     }
-
 
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info) //network functionality
     {

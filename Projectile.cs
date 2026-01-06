@@ -58,5 +58,9 @@ public class Projectile : MonoBehaviour //generic stationary projectile, that is
         moveDirection = dir.normalized;
         attackHitbox.gameObject.layer = playerLayerMask; //needs to be on right layer
         transform.position += projectileVerticleOffset;//apply offset
+        if (owner != null)
+        {
+            attackHitbox.playerOwner = owner; //set player owner for hit detection
+        }
     }
 }
