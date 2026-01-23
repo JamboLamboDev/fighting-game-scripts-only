@@ -38,6 +38,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.2f;
         AttackReward = 4f;
+        currentAttackHitstun = 0.1f;
 
 
     }
@@ -52,6 +53,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.5f;
         AttackReward = 6f;
+        currentAttackHitstun = 0.2f;
     }
     public override void NeutralSpecialAttack()
     {
@@ -71,6 +73,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 1.5f;
         AttackReward = 8f;
+        currentAttackHitstun = 0.1f;
         
     }
     public override void CrouchedHeavyAttack()
@@ -84,6 +87,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackBlockStunDuration = 1.5f;
         stunTimer = 2.5f;
         AttackReward = 6f;
+        currentAttackHitstun = 0.1f;
     }
     public override void CrouchedSpecialAttack()
     {
@@ -96,6 +100,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.5f;
         AttackReward = 4f;
+        currentAttackHitstun = 0.2f;
     }
     public override void AerialLightAttack()
     {
@@ -107,6 +112,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackKnockbackForce = 1f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 1f;
+        currentAttackHitstun = 0.1f;
     }
     public override void AerialHeavyAttack()
     {
@@ -118,6 +124,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackKnockbackForce = 3f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 1.5f;
+        currentAttackHitstun = 0.1f;
     }
     public override void AerialSpecialAttack()
     {
@@ -129,6 +136,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackKnockbackForce = 5f;
         currentAttackBlockStunDuration = 3f;
         stunTimer = 3f;
+        currentAttackHitstun = 0.3f; 
     }
     public override void ForwardLightAttack()
     {
@@ -140,6 +148,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackKnockbackForce = 1f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.5f;
+        currentAttackHitstun = 0.1f;
     }
     public override void ForwardHeavyAttack()
     {
@@ -151,6 +160,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackKnockbackForce = 3f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 1.5f;
+        currentAttackHitstun = 0.2f;
         
     }
 
@@ -166,6 +176,7 @@ public class GregFighter : FightingPlayerController,IPunObservable //inherits fr
         currentAttackKnockbackForce = 10f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0f;
+        currentAttackHitstun = 0.3f;
         
     }
 

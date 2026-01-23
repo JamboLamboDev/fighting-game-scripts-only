@@ -38,6 +38,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.2f;
         AttackReward = 4f;
+        currentAttackHitstun = 0.1f;
 
 
     }
@@ -53,6 +54,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.5f;
         AttackReward = 6f;
+        currentAttackHitstun = 0.1f;
     }
     public override void NeutralSpecialAttack() //uses roar tick multiple times instead, therefore empty
     { 
@@ -64,7 +66,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
     public override void CrouchedLightAttack()
     {
         isInAttack = true;
-        
+        currentAttackHitstun = 0.1f;
         currentAttackDamage = 10f;
         currentAttackStun = 2f;
         currentAttackProperty = "launch";
@@ -78,7 +80,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
     public override void CrouchedHeavyAttack()
     {
         isInAttack = true;
-        
+        currentAttackHitstun = 0.1f;
         currentAttackDamage = 15f;
         currentAttackStun = 3.5f;
         currentAttackProperty = "low";
@@ -91,7 +93,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
     public override void CrouchedSpecialAttack()
     {
         isInAttack = true;
-        
+        currentAttackHitstun = 0.1f;
         currentAttackDamage = 10f;
         currentAttackStun = 6f;
         currentAttackProperty = "knockdown";
@@ -104,7 +106,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
     public override void AerialLightAttack()
     {
         isInAttack = true;
-        
+        currentAttackHitstun = 0.1f;
         currentAttackDamage = 10f;
         currentAttackStun = 3f;
         currentAttackProperty = "high";
@@ -112,6 +114,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
         currentAttackKnockbackForce = 1f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 1f;
+        
     }
     public override void AerialHeavyAttack()
     {
@@ -123,6 +126,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
         currentAttackProperty2 = "n/a";
         currentAttackKnockbackForce = 3f;
         currentAttackBlockStunDuration = 0.5f;
+        currentAttackHitstun = 0.1f;
         stunTimer = 1.5f;
     }
     public override void AerialSpecialAttack()
@@ -135,6 +139,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
         currentAttackKnockbackForce = 5f;
         currentAttackBlockStunDuration = 3f;
         stunTimer = 3f;
+        currentAttackHitstun = 0.1f;
     }
     public override void ForwardLightAttack()
     {
@@ -147,6 +152,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
         currentAttackKnockbackForce = 1f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.5f;
+        currentAttackHitstun = 0.1f;
     }
     public override void ForwardHeavyAttack()
     {
@@ -159,7 +165,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
         currentAttackKnockbackForce = 3f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 1.5f;
-        
+        currentAttackHitstun = 0.1f;
     }
 
 
@@ -174,6 +180,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
         currentAttackKnockbackForce = 10f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0f;
+        currentAttackHitstun = 0.1f;
         
     }
 
@@ -181,7 +188,7 @@ public class CreaturaFighter : FightingPlayerController, IPunObservable //creatu
     {
         stunTimer =3f;
         health -= 3f;
-        opponent.photonView.RPC("RPC_TakeDamage",opponent.photonView.Owner,3f,3f,"unblockable","n/a",4f,4f,"n/a",0f);
+        opponent.photonView.RPC("RPC_TakeDamage",opponent.photonView.Owner,3f,3f,"unblockable","n/a",4f,4f,"n/a",0f,0f); // no hitstun, chips both players, but opponent is at disadv because creatura has the highest max hp
     }
 
 }

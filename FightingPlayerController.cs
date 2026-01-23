@@ -50,7 +50,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     // Attack properties of current attack //to be set in child class attack functions
     public float currentAttackDamage; // damage of current attack
     public float currentAttackStun; // stun duration of current attack
-    public float currentAttackHitstun = 0.1f; // hitstun duration of current attack - placeholder value is 0.1f
+    public float currentAttackHitstun; // hitstun duration of current attack - placeholder value is 0.1f
     public string currentAttackProperty; // property of current attack (high, low, launch, knockdown, etc)
     public string currentAttackProperty2;
     public float currentAttackKnockbackForce;
@@ -66,6 +66,8 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public PhotonView photonView; // to identify owner.
     private Coroutine doKnockback; // called when taking damage to execute knockback 
     public Coroutine isHitStun; // called when taking damage to execute hitstun
+
+    public float hitstunMoveSpeedMult;
 
     // ------------------------------------------------------- Bars ----------------------------------------------------
     public ValBar healthBar;
@@ -98,7 +100,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     public ParticleSystem[] particles; //particles for status effects
     //-------------------------------------------------------------- Audio ------------------------------------------------
     public AudioSource audioSource;
-    public AudioClip[] audioGenSFX; //called by ID, generic sounds that are not character specific
+    public AudioClip[] audioGenSFX; //called by ID, generic sounds that are not character specific or dont fit in with other categories 0 - block, 1 - guardbreak,2 - dash, 3 - gb attack warning, 4 - deflect (counter or similar)
     public AudioClip[] attackSFX; // 0 NL, 1 NH, 2 NS, 3 FL, 4 FH, 5 CL, 6 CH, 7 CS, 8 AL, 9 AH, 10 AS, 11 GB Attack
     public AudioClip[] damageSFX; // 0 light, 1 medium, 2 heavy, 3 blocked attacks.
     public bool isPlayingAttackSFX;
@@ -213,6 +215,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             {
                 if (!isDashing && stunTimer <= 0f && !isJumping && characterController.isGrounded)
                 {
+                    playGenericSound(2); //dash sound
                     photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"Dash");
                     isDashing = true;
                     stunTimer += 0.5f; // small stun during dash
@@ -377,7 +380,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         {
             float dashSpeed = moveSpeed * 3f; 
             Vector3 dashMovement = new Vector3(FacingRight ? 1f : -1f, 0f, 0f);
-            characterController.Move(dashMovement * Time.deltaTime * dashSpeed);
+            characterController.Move(dashMovement * Time.deltaTime * dashSpeed * hitstunMoveSpeedMult);
         }
         else if (!isCrouched)
         {
@@ -420,14 +423,15 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             {
                 animator.SetBool("isWalking", false);
             }
-            characterController.Move(movement * Time.deltaTime * moveSpeed);
+            characterController.Move(movement * Time.deltaTime * moveSpeed * hitstunMoveSpeedMult);
         }
 
     }
-    public void TakeDamage(float damage, float stunDuration, string attackProperty, string attackProperty2, float knockbackForce, float blockStunDuration,string attackStatusEffect,float attackStatusEffectDur) //called by attacker when attack hitbox connects
+    public void TakeDamage(float damage, float stunDuration, string attackProperty, string attackProperty2, float knockbackForce, float blockStunDuration,string attackStatusEffect,float attackStatusEffectDur, float hitstunDuration) //called by attacker when attack hitbox connects
     {
         if (isInCounter)
         {
+            playGenericSound(4); //play deflect sound
             isInCounter = false;
             CounterSuccess();
             return;
@@ -451,6 +455,7 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
 
             if (isBlocking && blockMeter > 0)
             {
+                playGenericSound(0); //play block sound
                 blockEffect.photonView.RPC("RPC_Appear", RpcTarget.All);
                 lastBlockTime = Time.time; // reset last block time for regen delay
 
@@ -465,9 +470,9 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                 if (blockMeter < 0) // if block is broken
                 {
                     blockMeter = 0;
-                    //insert block break animation
+                    photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "GuardBroken"); // play block break animation
                     stunTimer = 10f; //long stun on block break
-                    health -= damage * 0.4f; // take extra damage on block break up to 50% total damage
+                    SetStatusEffect("weakness",10f);
                 }
                 stunTimer = blockStunDuration; //negative frames on block hit
             }
@@ -513,19 +518,20 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
                 if (attackProperty == "launch" || attackProperty2 == "launch")
                 {
                     photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Launched"); ; // Play launched animation, no hitstun
+                    photonView.RPC("RPC_StartHitStun", RpcTarget.All, hitstunDuration, 0.2f); 
                     TakeKnockback(knockbackForce, true);
                 }
                 else if (attackProperty == "knockdown" || attackProperty2 == "knockdown")
                 {
                     isKnockedDown = true;
                     photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "HardKnockdown"); // Play knockdown animation
-                    photonView.RPC("RPC_StartHitStun", RpcTarget.All, 0.2f, 0.2f); // hitstun after knockdown animation starts
+                    photonView.RPC("RPC_StartHitStun", RpcTarget.All, 0.1f + hitstunDuration, 0.2f); // hitstun after knockdown animation starts
 
                 }
                 else
                 {
                     photonView.RPC("RPC_PlayAnimation", RpcTarget.All,"Damaged");
-                    photonView.RPC("RPC_StartHitStun", RpcTarget.All, 0.1f, 0.2f); 
+                    photonView.RPC("RPC_StartHitStun", RpcTarget.All, hitstunDuration, 0.2f); 
                     TakeKnockback(knockbackForce, false);
                 }
 
@@ -538,10 +544,10 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     }
 
     [PunRPC]
-    public void RPC_TakeDamage(float damage, float stunDuration, string attackProperty, string attackProperty2, float knockbackForce, float blockStunDuration,string attackStatusEffect,float attackStatusEffectDur) //called by attacker when attack hitbox connects
+    public void RPC_TakeDamage(float damage, float stunDuration, string attackProperty, string attackProperty2, float knockbackForce, float blockStunDuration,string attackStatusEffect,float attackStatusEffectDur, float hitstunDuration) //called by attacker when attack hitbox connects
     {
         if (!photonView.IsMine) return;
-        TakeDamage(damage, stunDuration, attackProperty, attackProperty2, knockbackForce, blockStunDuration,attackStatusEffect,attackStatusEffectDur);
+        TakeDamage(damage, stunDuration, attackProperty, attackProperty2, knockbackForce, blockStunDuration,attackStatusEffect,attackStatusEffectDur,hitstunDuration);
     }
     public bool blockSuccess(string attackProperty, string attackProperty2) //check if block is unsuccessful
     {
@@ -773,11 +779,13 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
     private IEnumerator doHitStun(float dur, float delay) //delay is to let certain animations play before hitstun
     {
         yield return new WaitForSeconds(delay);
+        hitstunMoveSpeedMult = 0.1f; //reduce movement speed during hitstun to sync with animation
         float animationSpeed = animator.speed; // store original animation speed
-        animator.speed = 0.1f * (animationSpeed); // slow down animation to simulate hitstun
+        animator.speed = 0.1f * animationSpeed; // slow down animation to simulate hitstun
         yield return new WaitForSeconds(dur);
         animator.speed = animationSpeed; // restore original animation speed
         isHitStun = null;
+        hitstunMoveSpeedMult = 1f;
     }
 
     // Hitbox and Hurtbox Management - called by animation events 
@@ -883,13 +891,14 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
         stunTimer = 0f; //end stun on finisher hit
         if (photonView.IsMine)
         {
-            opponent.photonView.RPC("RPC_TakeDamage", opponent.photonView.Owner, 10f, 5f, "unblockable", "knockdown", 3f, 10f, "n/a", 0f); //heavy damage and knockdown on finisher hit
+            opponent.photonView.RPC("RPC_TakeDamage", opponent.photonView.Owner, 10f, 5f, "unblockable", "knockdown", 3f, 10f, "n/a", 0f,0f); //heavy damage and knockdown on finisher hit
         }
     }
     [PunRPC]
     public void RPC_GuardBreak()
     { //attack that stuns opponent and breaks guard meter
         isGuardBreakAttacking = true;
+        playGenericSound(3); //gb attack warning sound
         if (!photonView.IsMine) return; //only owner does the rest.
         photonView.RPC("RPC_PlayAnimation",RpcTarget.All,"GuardBreakAttack");
         stunTimer = 3f; //framedata
@@ -946,14 +955,16 @@ public abstract class FightingPlayerController : MonoBehaviour, IPunObservable
             lastBlockTime = Time.time;
             blockMeter = 0; // break block meter
             blockBar.StartCoroutine(blockBar.ChangeToVal(blockMeter));
-            TakeDamage(5f, 100f, "unblockable", "n/a", guardBreakKnockback, 0f, "n/a", 0f); //stun until hit by finisher
+            TakeDamage(5f, 100f, "unblockable", "n/a", guardBreakKnockback, 0f, "n/a", 0f,1.5f); //stun until hit by finisher
             enemy.photonView.RPC("RPC_GuardBreakSuccess", RpcTarget.All); //their guard break is successful
             enemy.photonView.RPC("RPC_EndGuardBreakAttack", RpcTarget.All); //end their guard break attack state
             photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "GuardBroken"); // play guard broken animation
             hasbeenGuardBroken = true; // prevent multiple gb hits in one attack
+            playGenericSound(1); //guard break sound
         }
         else
         {
+            playGenericSound(4); //countered them.
             enemy.photonView.RPC("RPC_EndGuardBreakAttack", RpcTarget.All); //their guard break fails and leaves them open
         }
 

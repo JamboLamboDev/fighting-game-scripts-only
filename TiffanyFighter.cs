@@ -35,6 +35,7 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
         currentAttackProperty = "n/a";
         currentAttackProperty2 = "n/a";
         currentAttackKnockbackForce = 1f;
+        currentAttackHitstun = 0.1f;
         currentAttackBlockStunDuration = 1.1f;
         stunTimer = 1f;
         AttackReward = 8f;
@@ -63,6 +64,7 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
         currentAttackKnockbackForce = 0.6f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 1.5f;
+        currentAttackHitstun = 0.1f;
         AttackReward = 8f;
         
     }
@@ -86,6 +88,7 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
         currentAttackProperty2 = "n/a";
         currentAttackKnockbackForce = 1f;
         currentAttackBlockStunDuration = 1.5f;
+        currentAttackHitstun = 0.1f;
         stunTimer = 1f;
     }
     public override void AerialHeavyAttack()//strong combo start but unsafe on block
@@ -97,6 +100,7 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
         currentAttackProperty2 = "n/a";
         currentAttackKnockbackForce = 3f;
         currentAttackBlockStunDuration = 1.5f;
+        currentAttackHitstun = 0.2f;
         stunTimer = 1.5f;
     }
     public override void AerialSpecialAttack() //proj
@@ -113,6 +117,7 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
         currentAttackProperty2 = "n/a";
         currentAttackKnockbackForce = 3f;
         currentAttackBlockStunDuration = 0.2f; // VERY UNSAFE
+        currentAttackHitstun = 0.1f;
         stunTimer = 2f;
     }
     public override void ForwardHeavyAttack() //proj
@@ -132,6 +137,7 @@ public class TiffanyFighter : FightingPlayerController,IPunObservable // tiffany
         currentAttackProperty = "unblockable";
         currentAttackProperty2 = "knockdown";
         currentAttackKnockbackForce = 10f;
+        currentAttackHitstun = 0.1f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0f;
         
