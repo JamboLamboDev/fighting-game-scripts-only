@@ -7,6 +7,8 @@ using TMPro;
 
 public class PhotonMenuManager : MonoBehaviourPunCallbacks
 {
+    public CanvasGroup mainMenuCanvasGroup;
+    public CanvasGroup tutorialSecondaryCanvasGroup; // this will be used to switch canvas 
     public TMP_InputField RoomNameInput;
     public TMP_InputField PlayerName;
     private const string PlayerPrefsNameKey = "PlayerNickname";
@@ -40,6 +42,21 @@ public class PhotonMenuManager : MonoBehaviourPunCallbacks
 
         }
     }
+
+    public void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape) && !mainMenuCanvasGroup.interactable)
+        {
+            // Switch back to main menu
+            mainMenuCanvasGroup.alpha = 1f;
+            mainMenuCanvasGroup.interactable = true;
+            mainMenuCanvasGroup.blocksRaycasts = true;
+
+            tutorialSecondaryCanvasGroup.alpha = 0f;
+            tutorialSecondaryCanvasGroup.interactable = false;
+            tutorialSecondaryCanvasGroup.blocksRaycasts = false;
+        }
+    }        
 
     public override void OnConnectedToMaster() //creates room
     {
@@ -112,5 +129,27 @@ public class PhotonMenuManager : MonoBehaviourPunCallbacks
         PlayerPrefs.SetString(PlayerPrefsNameKey, PlayerName.text);
         PlayerPrefs.Save();
         
+    }
+
+    public void SwitchCanvas()//switch between main menu and tutorial.
+    {
+        if (tutorialSecondaryCanvasGroup.alpha == 1f)
+        {
+            mainMenuCanvasGroup.alpha = 1f;
+            mainMenuCanvasGroup.interactable = true;
+            mainMenuCanvasGroup.blocksRaycasts = true;
+            tutorialSecondaryCanvasGroup.alpha = 0f;
+            tutorialSecondaryCanvasGroup.interactable = false;
+            tutorialSecondaryCanvasGroup.blocksRaycasts = false;
+        }
+        else
+        {
+            mainMenuCanvasGroup.alpha = 0f;
+            mainMenuCanvasGroup.interactable = false;
+            mainMenuCanvasGroup.blocksRaycasts = false;
+            tutorialSecondaryCanvasGroup.alpha = 1f;
+            tutorialSecondaryCanvasGroup.interactable = true;
+            tutorialSecondaryCanvasGroup.blocksRaycasts = true;
+        }
     }
 }

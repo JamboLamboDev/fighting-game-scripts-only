@@ -20,6 +20,7 @@ public class Projectile : MonoBehaviour //generic stationary projectile, that is
     public float currentAttackBlockStunDuration;
     public string currentAttackStatusEffect;
     public float currentAttackStatusEffectDur;
+    public bool persistOnHit; // if true, projectile will not be destroyed on hit, allowing it to remain, but not hit multiple times, used for visuals
 
     
 
@@ -44,13 +45,18 @@ public class Projectile : MonoBehaviour //generic stationary projectile, that is
     public void TargetHit(FightingPlayerController target)
     {
         if (!photonView.IsMine) return;
+        if (target == owner || owner == null) return; //projectiles should not hit their owner
 
         if (owner.weaknessTimer > 0)
         {
             currentAttackDamage /= 1.3f; // 30% less damage while weak
         }
-        target.photonView.RPC("RPC_TakeDamage", target.photonView.Owner, currentAttackDamage, currentAttackStun, currentAttackProperty, currentAttackProperty2, currentAttackKnockbackForce, currentAttackBlockStunDuration, currentAttackStatusEffect, currentAttackStatusEffectDur,0);// hitstun is always 0 on projectiles 
-        PhotonNetwork.Destroy(this.gameObject);
+        target.photonView.RPC("RPC_TakeDamage", target.photonView.Owner, currentAttackDamage, currentAttackStun, currentAttackProperty, currentAttackProperty2, currentAttackKnockbackForce, currentAttackBlockStunDuration, currentAttackStatusEffect, currentAttackStatusEffectDur,0.1f);// hitstun is always 0.1 on projectiles 
+        if (!persistOnHit)
+        {
+            PhotonNetwork.Destroy(this.gameObject);
+        }
+        
     }
     
     public virtual void SetVar(Vector3 dir,int playerLayerMask)
