@@ -15,16 +15,19 @@ public class ProjHitbox : MonoBehaviour
         {
             owner = GetComponentInParent<Projectile>();
         }
+        if (playerOwner == null)
+        {
+            playerOwner = GetComponentInParent<FightingPlayerController>();
+        }
     }
     public virtual void OnTriggerEnter(Collider other)
     {
-        
         Hurtbox hurtbox = other.GetComponent<Hurtbox>();
-        Debug.Log("Hitbox triggered by " + other.name);
         if (hurtbox != null && hurtbox.owner != owner)
         {
-            Debug.Log("Hitbox triggered by " + other.name);
+            Debug.Log(" Projectile Hitbox triggered by " + other.name);
             owner.TargetHit(hurtbox.owner);
+            Destroy(gameObject);
         }
     }
 
@@ -33,8 +36,11 @@ public class ProjHitbox : MonoBehaviour
         Hurtbox hurtbox = other.GetComponent<Hurtbox>();
         if (hurtbox != null && hurtbox.owner != playerOwner) //fixes bug where projectiles could hit their own player owner since projectile owner is not a player
         {
-            Debug.Log("Hitbox triggered by " + other.name);
+            Debug.Log("Projectile Hitbox triggered by " + other.name);
             owner.TargetHit(hurtbox.owner);
+            //destroy hitbox
+            Destroy(gameObject);
+            
         }
     }
 

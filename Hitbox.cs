@@ -7,6 +7,7 @@ using Photon.Realtime;
 public class Hitbox : MonoBehaviour
 {
     public FightingPlayerController owner;
+    public float lastHitTime; //to prevent multiple triggers consecutively
 
     private void Awake()
     {
@@ -19,21 +20,22 @@ public class Hitbox : MonoBehaviour
     {
         
         Hurtbox hurtbox = other.GetComponent<Hurtbox>();
-        Debug.Log("Hitbox triggered by " + other.name);
-        if (hurtbox != null && hurtbox.owner != owner)
+        if (hurtbox != null && hurtbox.owner != owner && Time.time > lastHitTime + 0.1f) //prevent multiple hits in quick succession
         {
             Debug.Log("Hitbox triggered by " + other.name);
             owner.TargetHit(hurtbox.owner);
+            lastHitTime = Time.time;
         }
     }
 
     public virtual void OnTriggerStay(Collider other) //to double check
     {
         Hurtbox hurtbox = other.GetComponent<Hurtbox>();
-        if (hurtbox != null && hurtbox.owner != owner)
+        if (hurtbox != null && hurtbox.owner != owner && Time.time > lastHitTime + 0.1f) //prevent multiple hits in quick succession
         {
             Debug.Log("Hitbox triggered by " + other.name);
             owner.TargetHit(hurtbox.owner);
+            lastHitTime = Time.time;
         }
     }
 

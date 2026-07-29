@@ -22,6 +22,7 @@ public class PreGameMenuController : MonoBehaviourPunCallbacks//menu that deals 
     public TextMeshProUGUI playerNick1;
     public TextMeshProUGUI playerNick2;
     public PreviewChar currentChar;
+    public bool characterSpawned = false;
     private bool player1Ready;
     private bool player2Ready;
     public TextMeshProUGUI readyButtonLabel;
@@ -72,7 +73,7 @@ public class PreGameMenuController : MonoBehaviourPunCallbacks//menu that deals 
     }
     public void selectCharacter(int character)
     {
-        //spawn character
+        
         if (!readied)
         {
             currentChar = previewChars[character];
@@ -80,6 +81,7 @@ public class PreGameMenuController : MonoBehaviourPunCallbacks//menu that deals 
             stats.text = previewChars[character].characterStats;
             specialStats.text = previewChars[character].specialMoveDescription;
             characterID = character;
+            spawnCharacter();
         }
         //
     }
@@ -133,6 +135,19 @@ public class PreGameMenuController : MonoBehaviourPunCallbacks//menu that deals 
         }
 
 
+    }
+    public void spawnCharacter() //present character in preview area
+    {
+        if (!characterSpawned)
+        {
+            Instantiate(currentChar, new Vector3(0, 0, 0), Quaternion.Euler(0,180,0)); 
+            characterSpawned = true;
+        } else {
+            //delete current character and respawn
+            GameObject existingChar = GameObject.FindWithTag("Player");
+            Destroy(existingChar);
+            Instantiate(currentChar, new Vector3(0, 0, 0), Quaternion.Euler(0,180,0));
+        }
     }
 
 
