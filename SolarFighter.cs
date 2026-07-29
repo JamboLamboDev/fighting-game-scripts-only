@@ -26,7 +26,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
     }
 
     // ---ATTACKS--- 
-    // attacks are slow but strong
+    // attacks are slow but strong with lots of hitstun for weighty feel
     public override void NeutralLightAttack() //data for attack
     {
         isInAttack = true;
@@ -38,6 +38,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.2f;
         AttackReward = 4f;
+        currentAttackHitstun = 0.3f;
 
 
     }
@@ -52,6 +53,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 1f;
         AttackReward = 6f;
+        currentAttackHitstun = 0.3f;
     }
     public override void NeutralSpecialAttack()
     {
@@ -65,6 +67,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
         currentAttackBlockStunDuration = 1.2f;
         stunTimer = 0.5f;
         AttackReward = 6f;
+        currentAttackHitstun = 0.3f;
         
     }
     public override void CrouchedLightAttack()
@@ -78,17 +81,20 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 1.5f;
         AttackReward = 8f;
+        currentAttackHitstun = 0.3f;
         
     }
     public override void CrouchedHeavyAttack()
     {
         isInAttack = true;
         stunTimer = 1f;
+        currentAttackHitstun = 0.3f;
     }
     public override void CrouchedSpecialAttack()
     {
         isInAttack = true;
         stunTimer = 0.5f;
+        currentAttackHitstun = 0.3f;
     }
     public override void AerialLightAttack()
     {
@@ -112,6 +118,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
         currentAttackKnockbackForce = 0.5f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.5f;
+        currentAttackHitstun = 0.3f;
     }
     public override void ForwardHeavyAttack()
     {
@@ -123,7 +130,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
         currentAttackKnockbackForce = 1f;
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 1.5f;
-        
+        currentAttackHitstun = 0.3f;
     }
     public override void CounterSuccess()
     {
@@ -135,6 +142,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
         currentAttackProperty2 = "knockdown";
         currentAttackKnockbackForce = 10f;
         currentAttackBlockStunDuration = 0.5f;
+        currentAttackHitstun = 0.3f;
 
     }
     
@@ -142,6 +150,7 @@ public class SolarFighter : FightingPlayerController,IPunObservable //solar move
     {
         EndAttack();
         SetStatusEffect("heal", 10f);
+        
     }
 
 }

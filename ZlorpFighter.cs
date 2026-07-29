@@ -26,7 +26,7 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
     }
 
     // ---ATTACKS--- in progress
-    // zlorp's attacks are quick and can inflict status effects
+    // zlorp's attacks are quick and can inflict status effects, low hitstun to feel quick with little weight but very fast.
     public override void NeutralLightAttack() //data for attack
     {
         isInAttack = true;
@@ -38,6 +38,7 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.2f;
         AttackReward = 4f;
+        currentAttackHitstun = 0.1f;
 
 
     }
@@ -53,12 +54,13 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
         currentAttackBlockStunDuration = 0.5f;
         stunTimer = 0.5f;
         AttackReward = 6f;
+        currentAttackHitstun = 0.1f;
     }
     public override void NeutralSpecialAttack()
     {
 
         isInAttack = true;
-        
+        currentAttackHitstun = 0.1f;
         currentAttackDamage = 20f;
         currentAttackStun = 2.2f;
         currentAttackProperty = "high";
@@ -72,7 +74,7 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
     public override void CrouchedLightAttack()
     {
         isInAttack = true;
-        
+        currentAttackHitstun = 0.1f;
         currentAttackDamage = 10f;
         currentAttackStun = 2f;
         currentAttackProperty = "launch";
@@ -86,7 +88,7 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
     public override void CrouchedHeavyAttack()
     {
         isInAttack = true;
-        
+        currentAttackHitstun = 0.1f;
         currentAttackDamage = 15f;
         currentAttackStun = 3.5f;
         currentAttackProperty = "low";
@@ -99,7 +101,7 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
     public override void CrouchedSpecialAttack()
     {
         isInAttack = true;
-        
+        currentAttackHitstun = 0.1f;
         currentAttackDamage = 10f;
         currentAttackStun = 6f;
         currentAttackProperty = "knockdown";
@@ -112,7 +114,7 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
     public override void AerialLightAttack()
     {
         isInAttack = true;
-        
+        currentAttackHitstun = 0.1f;
         currentAttackDamage = 10f;
         currentAttackStun = 3f;
         currentAttackProperty = "high";
@@ -124,7 +126,7 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
     public override void AerialHeavyAttack()
     {
         isInAttack = true;
-        
+        currentAttackHitstun = 0.1f;
         currentAttackDamage = 20f;
         currentAttackStun = 1f;
         currentAttackProperty = "high";
@@ -143,11 +145,12 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
         currentAttackKnockbackForce = 5f;
         currentAttackBlockStunDuration = 3f;
         stunTimer = 3f;
+        currentAttackHitstun = 0.1f;
     }
     public override void ForwardLightAttack()
     {
         isInAttack = true;
-        
+        currentAttackHitstun = 0.1f;
         currentAttackDamage = 5f;
         currentAttackStun = 1f;
         currentAttackProperty = "n/a";
@@ -159,7 +162,7 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
     public override void ForwardHeavyAttack()
     {
         isInAttack = true;
-        
+        currentAttackHitstun = 0.1f;
         currentAttackDamage = 20f;
         currentAttackStun = 6f;
         currentAttackProperty = "high"; //overhead attack
@@ -175,7 +178,7 @@ public class ZlorpFighter : FightingPlayerController,IPunObservable /// zlorp mo
     {
         photonView.RPC("RPC_PlayAnimation", RpcTarget.All, "Counter");
         isInAttack = true;
-        
+        currentAttackHitstun = 0.2f;
         currentAttackDamage = 40f;
         currentAttackStun = 6f;
         currentAttackProperty = "unblockable";

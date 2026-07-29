@@ -49,7 +49,7 @@ public class Projectile : MonoBehaviour //generic stationary projectile, that is
         {
             currentAttackDamage /= 1.3f; // 30% less damage while weak
         }
-        target.photonView.RPC("RPC_TakeDamage", target.photonView.Owner, currentAttackDamage, currentAttackStun, currentAttackProperty, currentAttackProperty2, currentAttackKnockbackForce, currentAttackBlockStunDuration, currentAttackStatusEffect, currentAttackStatusEffectDur);
+        target.photonView.RPC("RPC_TakeDamage", target.photonView.Owner, currentAttackDamage, currentAttackStun, currentAttackProperty, currentAttackProperty2, currentAttackKnockbackForce, currentAttackBlockStunDuration, currentAttackStatusEffect, currentAttackStatusEffectDur,0);// hitstun is always 0 on projectiles 
         PhotonNetwork.Destroy(this.gameObject);
     }
     
